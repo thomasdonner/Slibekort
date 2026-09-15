@@ -1,0 +1,38 @@
+{
+  "name": "slibekort",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "brugere:opret": "node prisma/seed.mjs",
+    "mobilepay:webhook": "node scripts/mobilepay-webhook.mjs",
+    "engangsslibning:opret": "node scripts/engangsslibning-opret.mjs"
+  },
+  "dependencies": {
+    "@auth/prisma-adapter": "2.11.3",
+    "@prisma/client": "6.19.3",
+    "next": "16.3.4",
+    "next-auth": "5.0.0-beta.32",
+    "qrcode-generator": "2.0.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "read-excel-file": "9.3.10",
+    "resend": "6.27.0",
+    "write-excel-file": "4.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.4",
+    "prisma": "6.19.3",
+    "typescript": "^5",
+    "vitest": "^5.0.0"
+  }
+}

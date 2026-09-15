@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Spiller {
+  id       String   @id @default(cuid())
+  navn     String
+  hold     String
+  qrToken  String   @unique @default(cuid())
+  aktiv    Boolean  @default(true)
+  oprettet DateTime @default(now())
+
+  relationer  Relation[]
+  bevaegelser Bevaegelse[]
+  betalinger  Betaling[]
+  mails       Mail[]
+
+  // Nøglen en gentaget import genkender en spiller på. To forskellige
+  // spillere med samme navn på samme hold kan importen ikke skelne — det
+  // flager den som en bemærkning, holdlederen må rette i Holdsport.
+  @@unique([navn, hold])
+  @@map("spillere")
+}
+
+model Voksen {
+  id              String  @id @default(cuid())
+  navn            String?
+  // Nullbar: nogle kontakter i Holdsport-eksporten har kun et mobilnummer.
+  // Unik når den er sat, så søskende genbruger samme voksen ved import
+  // i stedet for at få en duplikeret række hver gang.
+  email           String? @unique
+  telefon         String?
+  emailBekraeftet Boolean @default(false)
+
+  relationer Relation[]
+
+  @@map("voksne")
+}
+
+// En spiller kan have flere voksne, en voksen kan have flere spillere (soeskende).
+model Relation {
+  spillerId     String
+  voksenId      String
+  modtagerMails Boolean @default(true)
+
+  spiller Spiller @relation(fields: [spillerId], references: [id])
+  voksen  Voksen  @relation(fields: [voksenId], references: [id])
+
+  @@id([spillerId, voksenId])
+  @@map("relationer")
+}
+
+enum BevaegelseType {
+  slibning
+  koeb
+  rettelse
+  fortrudt
+}
+
+// Saldoen er summen af antal for en spillers bevaegelser, aldrig et felt der rettes i.
+// antal er negativt for en slibning, positivt for et koeb.
+model Bevaegelse {
+  id           String         @id @default(cuid())
+  spillerId    String
+  type         BevaegelseType
+  antal        Int
+  tidspunkt    DateTime       @default(now())
+  // Null når bevaegelsen er skabt automatisk, fx et koeb fra MobilePay-webhooken.
+  udfoertAfId  String?
+  note         String?
+  // Nøgle fra telefonen, forhindrer at en genafsendt offline-scanning tæller to gange.
+  klientId     String         @unique
+  // Sat på en 'fortrudt'-raekke: id'et på den bevaegelse (typisk en
+  // slibning) den fortryder. Unik, en bevaegelse kan kun fortrydes én gang.
+  oprindeligId String?        @unique
+
+  spiller    Spiller     @relation(fields: [spillerId], references: [id])
+  udfoertAf  Bruger?     @relation(fields: [udfoertAfId], references: [id])
+  oprindelig Bevaegelse? @relation("Fortrydelse", fields: [oprindeligId], references: [id])
+  fortrudtAf Bevaegelse? @relation("Fortrydelse")
+
+  @@map("bevaegelser")
+}
+
+// oprettet: betalingen er dannet hos MobilePay, ingen har godkendt endnu.
+// godkendt: kunden har godkendt i appen (authorized), vi har bedt om indfrielse.
+// gennemfoert: pengene er indfriet (captured) — først her lægges slibninger til.
+// afvist/udloebet/annulleret: intet er trukket, saldoen er upåvirket.
+enum BetalingStatus {
+  oprettet
+  godkendt
+  gennemfoert
+  afvist
+  udloebet
+  annulleret
+}
+
+model Betaling {
+  id               String         @id @default(cuid())
+  spillerId        String
+  // Øre, ikke kroner — sådan returnerer MobilePays webhook beløbet.
+  beloeb           Int
+  antalSlibninger  Int
+  udbyderReference String         @unique
+  status           BetalingStatus @default(oprettet)
+  tidspunkt        DateTime       @default(now())
+  opdateret        DateTime       @updatedAt
+
+  spiller Spiller @relation(fields: [spillerId], references: [id])
+
+  @@map("betalinger")
+}
+
+// Kravspecifikationen, afsnit 8: "Tre mails, ikke flere."
+enum MailType {
+  advarsel
+  rykker
+  kvittering
+}
+
+model Mail {
+  id              String   @id @default(cuid())
+  spillerId       String
+  type            MailType
+  sendtTil        String
+  tidspunkt       DateTime @default(now())
+  // Fritekst, ikke en enum: Resends leveringsstatusser (bounced, leveret,
+  // ...) er ikke bygget ind endnu — se CLAUDE.md.
+  leveringsstatus String?
+
+  spiller Spiller @relation(fields: [spillerId], references: [id])
+
+  @@map("mails")
+}
+
+// Roller kan kombineres — samme bruger er ofte baade kasserer og administrator.
+enum Rolle {
+  sliber
+  kasserer
+  holdleder
+  administrator
+}
+
+// Bruger er en systemkonto (logger ind, har roller). Voksen er en
+// forældrekontakt (modtager mails). Samme person kan optræde i begge,
+// men det er to forskellige ting, ikke det samme felt.
+model Bruger {
+  id       String   @id @default(cuid())
+  userId   String   @unique
+  navn     String
+  roller   Rolle[]
+  aktiv    Boolean  @default(true)
+  oprettet DateTime @default(now())
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bevaegelser Bevaegelse[]
+  holdAdgang  BrugerHold[]
+
+  @@map("brugere")
+}
+
+// Hvilke hold en holdleder har adgang til. Kun relevant for rollen
+// holdleder — kasserer og administrator ser og retter alle hold uanset.
+model BrugerHold {
+  id       String   @id @default(cuid())
+  brugerId String
+  hold     String
+  tildelt  DateTime @default(now())
+
+  bruger Bruger @relation(fields: [brugerId], references: [id], onDelete: Cascade)
+
+  @@unique([brugerId, hold])
+  @@map("bruger_hold")
+}
+
+// Fra her og ned: Auth.js' egne tabeller (magisk link pr. mail via Resend).
+// Navngivningen følger Auth.js' Prisma-adapter, så en frivillig, der har
+// set et Auth.js-eksempel før, kan genkende dem.
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  accounts Account[]
+  sessions Session[]
+  bruger   Bruger?
+
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}

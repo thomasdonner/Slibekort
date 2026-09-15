@@ -1,0 +1,675 @@
+/* Farver taget fra aaik.dk (rød CTA-farve, sort menulinje) — se CLAUDE.md. */
+:root {
+  --baggrund: #f4f4f5;
+  --flade: #ffffff;
+  --tekst: #1c1b1b;
+  --tekst-svag: #6b6b6b;
+  --kant: #e6e6e7;
+  --sort: #0a0a0a;
+  --sort-tekst: #ffffff;
+  --accent: #dd2f2f;
+  --accent-tekst: #ffffff;
+  --accent-lys: #fbeaea;
+  --fare: #7a1414;
+  --fare-lys: #f6e9e9;
+  --sund: #1a7a4a;
+  --sund-lys: #e8f5ee;
+  --skygge: 0 1px 2px rgba(15, 15, 15, 0.04), 0 8px 24px -10px rgba(15, 15, 15, 0.12);
+  --skygge-flydende: 0 4px 10px rgba(15, 15, 15, 0.06), 0 16px 32px -12px rgba(15, 15, 15, 0.18);
+  --accent-gloed: rgba(221, 47, 47, 0.32);
+  --radius: 14px;
+  --radius-lille: 10px;
+  --overgang: 150ms ease;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --baggrund: #17181a;
+    --flade: #1f2124;
+    --tekst: #ececec;
+    --tekst-svag: #a3a3a3;
+    --kant: #34363a;
+    --sort: #000000;
+    --sort-tekst: #ffffff;
+    --accent: #ea4c4c;
+    --accent-tekst: #1a0a0a;
+    --accent-lys: #331e1e;
+    --fare: #e08585;
+    --fare-lys: #3a2222;
+    --sund: #6cc99a;
+    --sund-lys: #1c2f26;
+    --skygge: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -10px rgba(0, 0, 0, 0.5);
+    --skygge-flydende: 0 4px 10px rgba(0, 0, 0, 0.4), 0 16px 32px -12px rgba(0, 0, 0, 0.6);
+    --accent-gloed: rgba(234, 76, 76, 0.4);
+  }
+  html {
+    color-scheme: dark;
+  }
+}
+
+html {
+  height: 100%;
+}
+
+html,
+body {
+  max-width: 100vw;
+}
+
+body {
+  min-height: 100%;
+  color: var(--tekst);
+  background: var(--baggrund);
+  font-family: var(--font-sans), Calibri, Candara, "Segoe UI", Optima,
+    -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* Topbjælken med klubbens logo, på alle sider */
+.klub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  background: linear-gradient(135deg, var(--sort) 0%, #250c0c 100%);
+  color: var(--sort-tekst);
+  padding: 0.6rem 1.25rem;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+/* En stribe der låner fra spillertrøjens sort/hvid/rød — klubbens eget
+   visuelle kendetegn, ikke bare endnu en grå admin-bjælke. */
+.klub-stribe {
+  height: 4px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--accent) 0px,
+    var(--accent) 12px,
+    var(--sort) 12px,
+    var(--sort) 24px
+  );
+}
+
+.klub-header-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--sort-tekst);
+  text-decoration: none;
+}
+
+.klub-header img {
+  height: 28px;
+  width: auto;
+}
+
+.klub-header span {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  font-size: 1rem;
+}
+
+/* Kontomenuen i højre side af topbjælken */
+.bruger-menu {
+  position: relative;
+}
+
+.bruger-menu-knap {
+  background: transparent;
+  border: none;
+  padding: 0;
+  min-height: 0;
+  cursor: pointer;
+}
+
+.bruger-cirkel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-tekst);
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.bruger-menu-indhold {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.6rem);
+  background: var(--flade);
+  color: var(--tekst);
+  border: 1px solid var(--kant);
+  border-radius: var(--radius-lille);
+  box-shadow: var(--skygge-flydende);
+  padding: 0.75rem;
+  min-width: 220px;
+  animation: menu-ind 120ms ease;
+}
+
+@keyframes menu-ind {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.bruger-menu-email {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0.1rem 0.3rem 0;
+  word-break: break-word;
+}
+
+.bruger-menu-email-lille {
+  font-size: 0.78rem;
+  color: var(--tekst-svag);
+  margin: 0 0.3rem 0.6rem;
+  word-break: break-word;
+}
+
+main {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 1.75rem 1.25rem 4rem;
+}
+
+h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.015em;
+}
+
+h2 {
+  font-size: 1.02rem;
+  font-weight: 600;
+  margin: 0 0 0.9rem;
+  letter-spacing: -0.005em;
+}
+
+p {
+  margin: 0.5rem 0;
+  color: var(--tekst);
+}
+
+a {
+  color: var(--accent);
+  transition: color var(--overgang);
+}
+
+ul,
+ol {
+  padding-left: 1.3rem;
+  margin: 0.5rem 0;
+}
+
+li {
+  margin: 0.3rem 0;
+}
+
+/* Sideoverskriftens navigation, fx overblikkets "Importér hold ..." */
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 1.1rem 0 1.85rem;
+  padding-bottom: 1.35rem;
+  border-bottom: 1px solid var(--kant);
+}
+
+nav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: var(--flade);
+  border: 1px solid var(--kant);
+  text-decoration: none;
+  color: var(--tekst);
+  font-size: 0.87rem;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: var(--skygge);
+  transition: border-color var(--overgang), color var(--overgang),
+    transform var(--overgang);
+}
+
+nav a:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+nav a svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Kortlignende grupper — sektioner i overblikket og på spillerens side */
+section {
+  background: var(--flade);
+  border: 1px solid var(--kant);
+  border-radius: var(--radius);
+  box-shadow: var(--skygge);
+  padding: 1.35rem 1.5rem;
+  margin: 1.25rem 0;
+}
+
+section > h2:first-child {
+  margin-top: 0;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.85rem;
+}
+
+/* Adskiller flere formularer i træk, fx en voksen pr. formular */
+form + form {
+  margin-top: 0.5rem;
+  padding-top: 1.1rem;
+  border-top: 1px dashed var(--kant);
+}
+
+fieldset {
+  border: 1px solid var(--kant);
+  border-radius: var(--radius-lille);
+  padding: 0.75rem 1rem;
+  margin: 0;
+}
+
+legend {
+  padding: 0 0.4rem;
+  font-size: 0.85rem;
+  color: var(--tekst-svag);
+}
+
+fieldset label {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+  width: auto;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.87rem;
+  font-weight: 500;
+  color: var(--tekst-svag);
+  width: 100%;
+  max-width: 380px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="file"],
+select {
+  font: inherit;
+  color: var(--tekst);
+  background: var(--flade);
+  border: 1px solid var(--kant);
+  border-radius: var(--radius-lille);
+  padding: 0.55rem 0.75rem;
+  min-height: 44px;
+  transition: border-color var(--overgang), box-shadow var(--overgang);
+}
+
+input[type="text"]:hover,
+input[type="email"]:hover,
+input[type="number"]:hover,
+select:hover {
+  border-color: #c7c7c7;
+}
+
+input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+}
+
+input:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--sort);
+  outline-offset: 2px;
+}
+
+@media (prefers-color-scheme: dark) {
+  input:focus-visible,
+  select:focus-visible,
+  button:focus-visible,
+  a:focus-visible {
+    outline-color: var(--tekst);
+  }
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent-tekst);
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-lille);
+  padding: 0.6rem 1.25rem;
+  min-height: 44px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  transition: filter var(--overgang), transform var(--overgang),
+    box-shadow var(--overgang);
+}
+
+button:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 6px 18px -4px var(--accent-gloed);
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: none;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Farlige/uigenkaldelige handlinger — fjern adgang, markér stoppet.
+   Omridset i stedet for fyldt, så den ikke drukner blandt de almindelige
+   røde knapper — netop fordi accentfarven også er rød. */
+button.knap-fare {
+  background: transparent;
+  color: var(--fare);
+  border-color: var(--fare);
+}
+
+button.knap-fare:hover {
+  background: var(--fare-lys);
+  filter: none;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Rolig, tekstlignende knap — bruges i kontomenuen, ikke en handling man
+   skal lægge mærke til på afstand som de røde handlingsknapper. */
+button.knap-tekst {
+  width: 100%;
+  justify-content: flex-start;
+  background: transparent;
+  color: var(--tekst);
+  border: none;
+  min-height: 38px;
+  padding: 0.4rem 0.5rem;
+  font-weight: 500;
+  border-radius: 8px;
+}
+
+button.knap-tekst:hover {
+  background: var(--baggrund);
+  filter: none;
+  box-shadow: none;
+  transform: none;
+}
+
+button.knap-tekst svg {
+  width: 17px;
+  height: 17px;
+  color: var(--tekst-svag);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.65rem 0.6rem;
+  border-bottom: 1px solid var(--kant);
+  vertical-align: top;
+}
+
+tbody tr {
+  transition: background var(--overgang);
+}
+
+tbody tr:hover {
+  background: var(--baggrund);
+}
+
+th {
+  color: var(--tekst-svag);
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Tal i tabeller — saldo, antal — højrestillet og med ensbredde-cifre, så
+   de er lette at sammenligne lodret ned gennem en kolonne. */
+.tal {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.tal-sund {
+  color: var(--sund);
+}
+
+.tal-advarsel {
+  color: #9a6b00;
+}
+
+.tal-kritisk {
+  color: var(--fare);
+}
+
+[role="alert"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  background: var(--fare-lys);
+  border: 1px solid var(--fare);
+  color: var(--fare);
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  font-weight: 500;
+}
+
+[role="alert"] svg {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 0.1rem;
+}
+
+/* Nøgletal øverst i overblikket — et hurtigt "sådan står det til lige nu",
+   før man overhovedet skal læse en tabel. */
+.stat-raekke {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.stat-kort {
+  background: var(--flade);
+  border: 1px solid var(--kant);
+  border-radius: var(--radius);
+  box-shadow: var(--skygge);
+  padding: 1.1rem 1.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.stat-tal {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--tekst-svag);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stat-kort-advarsel {
+  border-color: var(--fare);
+  background: linear-gradient(165deg, var(--fare-lys) 0%, var(--flade) 65%);
+}
+
+.stat-kort-advarsel .stat-tal {
+  color: var(--fare);
+}
+
+/* "Bevægelser der kræver et kig" — en aktivitetsliste, ikke bare
+   opremsede punkter, så det ligner noget der rent faktisk kræver et blik. */
+.flag-liste {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.flag-raekke {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin: 0;
+  padding: 0.75rem 0.9rem;
+  border-radius: var(--radius-lille);
+  border-left: 3px solid var(--fare);
+  background: var(--fare-lys);
+}
+
+.flag-raekke svg {
+  flex-shrink: 0;
+  color: var(--fare);
+  margin-top: 0.2rem;
+  width: 18px;
+  height: 18px;
+}
+
+/* Status på systemtjek-siden — sat op/mangler, med et lille ikon foran. */
+.status-tjek {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-tjek svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+}
+
+.flag-raekke a {
+  font-weight: 600;
+}
+
+.flag-raekke p {
+  margin: 0.15rem 0 0;
+  font-size: 0.9rem;
+  color: var(--tekst-svag);
+}
+
+.flag-raekke time {
+  font-size: 0.78rem;
+  color: var(--tekst-svag);
+}
+
+/* Kvitteringen i scanneren — den skærm sliberen ser oftest af alle, skal
+   føles som en bekræftelse, ikke bare endnu en tekstlinje. */
+.kvittering {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+@keyframes pop-ind {
+  0% {
+    transform: scale(0.75);
+    opacity: 0;
+  }
+  65% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.kvittering-ikon {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--sund-lys);
+  color: var(--sund);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+  animation: pop-ind 320ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.kvittering-ikon svg {
+  width: 28px;
+  height: 28px;
+}
+
+.kvittering-saldo {
+  /* Overskriver .tal's højrestilling — her skal tallet stå midt på
+     siden, ikke ude i højre side af en fuld-bredde blok. */
+  text-align: center;
+  font-size: 2.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  animation: pop-ind 320ms cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.kvittering button {
+  display: flex;
+  width: 100%;
+  max-width: 320px;
+  margin: 0.5rem auto 0;
+}
