@@ -120,6 +120,8 @@ Xlsx-filen indeholder ikke de voksnes navne, kun deres kontaktoplysninger. Det e
 
 **Dubletter:** ved gentagen import af samme hold opdateres eksisterende spillere. Saldi og historik røres aldrig af en import.
 
+**Spillere der rykker op en årgang** (fx fra U14 til U16 ved sæsonskifte) genkendes automatisk, når det nye holds fil importeres — forudsat mindst én af de indtastede mailadresser går igen fra den forælderkontakt, spilleren allerede havde. Saldo, historik og QR-kode følger med uændret, som beskrevet i afsnit 7. Er der intet fælles at genkende spilleren på (ny mailadresse, eller slet ingen), oprettes en ny spiller som normalt, med en bemærkning om at det er værd at tjekke.
+
 ### 5.5 En spiller stopper
 
 Kassereren markerer spilleren som inaktiv. Spilleren forsvinder fra listerne, men historikken bevares af hensyn til regnskabet. Se afsnit 11 om sletning.
@@ -175,7 +177,7 @@ Det er her systemet enten holder eller går i stykker. Hver situation skal have 
 | Søskende med lav saldo samme dag | Én samlet mail til den voksne med begge børn. |
 | Betalingen fejler undervejs | Saldoen ændres først, når betalingen er bekræftet. En afbrudt betaling gør ingenting. |
 | Forælderen betaler to gange | Begge betalinger registreres. Kassereren får en advarsel om mulig dobbeltbetaling. |
-| Spilleren skifter hold midt i sæsonen | Saldoen følger spilleren. QR-koden er uændret. |
+| Spilleren skifter hold (fx midt i sæsonen, eller rykker op en årgang ved sæsonskifte) | Saldoen følger spilleren. QR-koden er uændret. Genkendes automatisk ved import, når en fælles forældrekontakt bekræfter det er samme spiller — se afsnit 5.4. |
 | Spilleren stopper med saldo tilbage | Har spilleren en søskende i klubben, tilbyder overblikket kassereren at flytte saldoen. Ellers bortfalder den. |
 | QR-koden bliver væk | Kassereren udsteder en ny. Den gamle gøres ugyldig. |
 | Nogen fotograferer en QR-kode | Uden sliberens login kan koden kun vise saldoen — ikke trække noget. |

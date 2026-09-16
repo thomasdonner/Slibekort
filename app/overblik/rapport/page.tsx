@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { kraevOverblikAdgang } from "@/lib/kraev-overblik-adgang";
 import { kanRetteSaldi } from "@/lib/roller";
 import { ENGANGSSLIBNING_HOLD } from "@/lib/spillere/engangsslibning";
-import { IkonRapport } from "@/app/ikoner";
+import { IkonBillet, IkonHold, IkonRapport } from "@/app/ikoner";
 
 // Samme adgang som selve API-ruten (/api/overblik/rapport) — kun kasserer
 // og administrator, se dens egen kommentar.
@@ -30,29 +30,37 @@ export default async function RapportSide() {
       <h1>Saldorapport</h1>
       <p>Excel-filer (.xlsx) med spillernavn, hold og resterende saldo.</p>
 
-      <ul>
-        <li>
-          <a href="/api/overblik/rapport">
-            <IkonRapport /> Alle hold samlet
-          </a>
-        </li>
+      <div className="rapport-liste">
+        <a className="rapport-kort" href="/api/overblik/rapport">
+          <span className="rapport-ikon rapport-ikon-alle">
+            <IkonHold />
+          </span>
+          <span className="rapport-titel">Alle hold samlet</span>
+        </a>
         {holdRaekker.map((h) => (
-          <li key={h.hold}>
-            <a href={`/api/overblik/rapport?hold=${encodeURIComponent(h.hold)}`}>
-              <IkonRapport /> {h.hold}
-            </a>
-          </li>
+          <a
+            key={h.hold}
+            className="rapport-kort"
+            href={`/api/overblik/rapport?hold=${encodeURIComponent(h.hold)}`}
+          >
+            <span className="rapport-ikon">
+              <IkonRapport />
+            </span>
+            <span className="rapport-titel">{h.hold}</span>
+          </a>
         ))}
         {harEngangsslibning && (
-          <li>
-            <a
-              href={`/api/overblik/rapport?hold=${encodeURIComponent(ENGANGSSLIBNING_HOLD)}`}
-            >
-              <IkonRapport /> Engangsslibning
-            </a>
-          </li>
+          <a
+            className="rapport-kort"
+            href={`/api/overblik/rapport?hold=${encodeURIComponent(ENGANGSSLIBNING_HOLD)}`}
+          >
+            <span className="rapport-ikon">
+              <IkonBillet />
+            </span>
+            <span className="rapport-titel">Engangsslibning</span>
+          </a>
         )}
-      </ul>
+      </div>
     </main>
   );
 }

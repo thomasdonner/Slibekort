@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { erUdviklingsmiljoe } from "@/lib/udviklingsmiljoe";
+import { ENGANGSSLIBNING_HOLD } from "@/lib/spillere/engangsslibning";
 import { afprovAlleRoller, afprovHoldleder, afprovRolle } from "./actions";
 
 export default async function AfprovSomSide() {
@@ -12,8 +13,11 @@ export default async function AfprovSomSide() {
     notFound();
   }
 
+  // Engangsslibning (lib/spillere/engangsslibning.ts) er ikke et rigtigt
+  // hold — ingen holdleder skal kunne få tildelt adgang til det, heller
+  // ikke i dette udviklingsværktøj, så det skal ikke stå i listen.
   const holdRaekker = await prisma.spiller.findMany({
-    where: { aktiv: true },
+    where: { aktiv: true, hold: { not: ENGANGSSLIBNING_HOLD } },
     select: { hold: true },
     distinct: ["hold"],
     orderBy: { hold: "asc" },

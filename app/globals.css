@@ -261,6 +261,19 @@ nav a svg {
   height: 16px;
 }
 
+/* Hold-vælgeren i overblikket — samme pille-stil som resten af nav'en,
+   men med en tydelig fyldt tilstand for det hold, der lige nu er valgt. */
+.hold-vaelger a.aktiv {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-tekst);
+}
+
+.hold-vaelger a.aktiv:hover {
+  color: var(--accent-tekst);
+  transform: none;
+}
+
 /* Kortlignende grupper — sektioner i overblikket og på spillerens side */
 section {
   background: var(--flade);
@@ -672,4 +685,63 @@ th {
   width: 100%;
   max-width: 320px;
   margin: 0.5rem auto 0;
+}
+
+/* Saldorapportens hold-vælger — kort i stedet for en ren tekstliste, så
+   hvert hold er et stort, tydeligt tryk-mål, ikke en lille tekstlink. */
+.rapport-liste {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.rapport-kort {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 1.6rem 1rem;
+  background: var(--flade);
+  border: 1px solid var(--kant);
+  border-radius: var(--radius);
+  box-shadow: var(--skygge);
+  text-decoration: none;
+  color: var(--tekst);
+  text-align: center;
+  transition: border-color var(--overgang), box-shadow var(--overgang),
+    transform var(--overgang);
+}
+
+.rapport-kort:hover {
+  border-color: var(--accent);
+  box-shadow: var(--skygge-flydende);
+  transform: translateY(-2px);
+}
+
+.rapport-ikon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  background: var(--accent-lys);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.rapport-ikon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.rapport-ikon-alle {
+  background: var(--sort);
+  color: #fff;
+}
+
+.rapport-titel {
+  font-weight: 600;
+  font-size: 0.95rem;
 }

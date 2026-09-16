@@ -193,6 +193,10 @@ dokumentation.
   (kun telefon) kan af samme grund ikke genkendes på tværs af importer og
   får en ny `voksen`-række hver gang — accepteret, fordi den slags kontakt
   alligevel ikke kan modtage mailpåmindelser.
+  **Undtagelse tilføjet senere:** en spiller der optræder på et helt andet
+  hold end sidst (fx rykket op en årgang) genkendes alligevel, via en
+  fælles forældrekontakt — se "Beslutninger undervejs — automatisk
+  flytning ved sæsonskifte" længere nede.
 - **Importsiden ligger på `/import`**, ikke nestet under noget endnu —
   kassererens overblik (punkt 4) kan linke til den, når det findes.
   Adgang: **kun kasserer og administrator**, ikke holdleder — se
@@ -721,12 +725,9 @@ kun én delt spiller.**
   reserverede hold-navn — nødvendigt, netop fordi den ikke står i den
   almindelige liste man ellers ville klikke sig ind fra. Findes den ikke
   (scriptet aldrig kørt), vises linket bare ikke — ingen fejl.
-- **Et statistik-kort ("Engangsslibninger") i `/overblik`**, ved siden af
-  Spillere/Hold/Kræver et kig, viser antallet af `type: "slibning"`-
-  bevægelser på dens spiller-id — ikke saldoen, som altid ender i 0 (købt
-  og trukket er to adskilte bevægelser, ligesom alle andre steder i
-  systemet, jf. afsnit 6), og derfor intet fortæller om, hvor meget koden
-  reelt bruges.
+- **To statistik-kort i `/overblik`** (ikke saldoen, som altid ender i 0)
+  viser hvor meget koden reelt bruges — se næste punkt for hvorfor det
+  blev to kort, ikke ét.
 
 ## Beslutninger undervejs — saldorapport pr. hold og som Excel
 
@@ -758,3 +759,186 @@ ad gangen, ikke kun alle hold samlet, og som en rigtig Excel-fil, ikke CSV.
   endnu en ting at validere en holdleder ikke skulle kunne omgå (ikke at
   det er muligt for dem at nå ruten i første omgang, `kanRetteSaldi`
   stopper dem allerede).
+
+## Beslutninger undervejs — hold-vælger i overblikket
+
+Ønske: med flere hold oprettet skal man kunne vælge ét hold ad gangen i
+selve overblikket (ikke kun på QR-ark og saldorapport-siderne, som
+allerede havde det), og spillerlisten i bunden skal først vises, når et
+hold rent faktisk er valgt — ikke en lang, samlet liste som standard.
+
+- **`/overblik?hold=<navn>`** indsnævrer både spillerlisten og "kræver et
+  kig" til det ene hold. `?hold=alle` er den eksplicitte "vis det hele
+  samlet"-mulighed, adskilt fra slet intet valgt (URL'en uden `?hold=`) —
+  de to tilstande skal kunne skelnes, netop fordi spillerlisten kun må
+  vises i det ene af dem.
+- **Vælgeren (pillerne "Alle hold" / hvert hold) vises kun, når der reelt
+  er mere end ét hold at vælge imellem** (`tilladteHold.length > 1`) — med
+  kun ét hold ville vælgeren ikke tilføje noget, kun en ekstra
+  beslutning at tage. I det tilfælde er spillerlisten synlig med det
+  samme, som den altid har været.
+- **"Kræver et kig" beholder sin gamle standardopførsel, når intet er
+  valgt** — kasserer/administrator ser fortsat alt på tværs af alle hold
+  (inklusive et sjældent flag på Engangsslibning), præcis som før denne
+  ændring. Kun når et bestemt hold aktivt vælges, indsnævres listen til
+  det. De to forespørgsler (spillerliste og "kræver et kig") bruger
+  bevidst hver sin betingelse, ikke den samme genbrugte variabel — ellers
+  ville "kræver et kig" utilsigtet også have udelukket Engangsslibning i
+  standardtilstanden.
+- **"Hold"-tallet i statistik-rækken viser altid det samlede antal hold
+  brugeren har adgang til**, uanset hvilket hold der aktuelt er valgt —
+  ikke antal hold i den viste liste (som ville vise "1", når et enkelt
+  hold er valgt, og skjule at der findes flere).
+- **Et ugyldigt eller ukendt `?hold=`-navn opfører sig som "intet valgt
+  endnu"**, ikke som en fejlside — samme skånsomme håndtering som
+  resten af overblikket.
+
+## Beslutninger undervejs — rettelse af ikonstørrelse på `/overblik/rapport`
+
+Fejl: ikonerne på saldorapportens hold-liste (`app/overblik/rapport/page.tsx`)
+blev vist alt for store. Årsagen var, at siden brugte en almindelig
+`<ul><li><a>`-liste med et ikon indeni — men ikoners størrelse styres kun
+af CSS-regler knyttet til `nav a svg` (se `.hold-vaelger` ovenfor), som
+ikke gjaldt her, fordi disse links ikke lå inde i et `<nav>`-element. Et
+SVG uden eksplicit `width`/`height` (som alle håndtegnede ikoner i
+`app/ikoner.tsx`) falder tilbage til browserens standardstørrelse, ikke
+til sit eget `viewBox`.
+
+- **Løst med en dedikeret kort-liste (`.rapport-liste`/`.rapport-kort`)**,
+  ikke ved at proppe dem ind i endnu et `<nav>` — et helt kort pr. hold
+  er en tydeligere, mere "lækker" tryk-flade end en tekstlinje, og
+  matcher allerede den cirkel-ikon-i-farvet-baggrund-stil, kvitterings-
+  skærmen i punkt 2 introducerede (`.kvittering-ikon`). Ikonets størrelse
+  er nu eksplicit sat via `.rapport-ikon svg`, så fejlen ikke kan opstå
+  igen for et nyt ikon tilføjet her.
+- **"Alle hold samlet" har sin egen sorte cirkel** i stedet for den røde
+  accentfarve de enkelte hold og Engangsslibning deler — et lille visuelt
+  hint om at det er den samlede/anderledes mulighed, ikke bare endnu et
+  hold i rækken.
+
+## Beslutninger undervejs — betalt og udført hver for sig, plus "Udført af"
+
+Ønske: kassereren skal kunne se betalinger og udførte slibninger på
+engangsslibning hver for sig, ikke kun ét samlet tal — for at opdage, hvis
+nogen har betalt, men sliberen har glemt at scanne bagefter (eller
+omvendt).
+
+- **Ét statistik-kort blev til to**: "Engangsslibning betalt" (`COUNT` af
+  `type: "koeb"`) og "Engangsslibning udført" (`COUNT` af
+  `type: "slibning"`), i `/overblik`. De to tal *skal* være ens over tid —
+  hver betaling svarer til præcis én slibning, før eller siden.
+- **Begge kort får `stat-kort-advarsel`-stilen, når tallene ikke stemmer
+  overens** — samme genbrugte klasse som "Kræver et kig" allerede bruger
+  ved advarsler. Det gør uoverensstemmelsen synlig med det samme i
+  overblikket, uden at kassereren skal tælle rækker i en historik-tabel
+  for at opdage den.
+- **Ny kolonne "Udført af" i spillerens Historik**
+  (`app/overblik/spillere/[id]/page.tsx`), ikke kun for Engangsslibning,
+  men for enhver spiller — den slår `bevaegelse.udfoertAf` op (allerede en
+  relation i skemaet, blot ikke inkluderet i forespørgslen eller vist før
+  nu) og viser "Automatisk (MobilePay)" når den er tom. Det er den eneste
+  bevægelsestype uden en logget ind person bag sig — enhver scanning,
+  rettelse eller fortrydelse kræver et menneske. Denne kolonne er det,
+  kassereren i praksis bruger til at se *hvilken* betaling der mangler sin
+  slibning (eller omvendt), når de to tal på overblikket ikke stemmer.
+
+## Beslutninger undervejs — Engangsslibning udeladt fra `/afprov-som`
+
+Fejl: holdleder-formularen i `/afprov-som` foreslog "Engangsslibning" som
+et vælgbart hold, fordi dens dropdown blot hentede alle distinkte
+hold-værdier fra `spillere`-tabellen uden at udelukke det reserverede
+hold, ligesom de rigtige sider (`/overblik`, `/overblik/qr-ark`,
+saldorapporten) allerede gør. Rettet med samme
+`hold: { not: ENGANGSSLIBNING_HOLD }`-filter som de andre steder — ingen
+holdleder skal kunne få (eller i et testværktøj foreslås) adgang til noget,
+der ikke er et rigtigt hold.
+
+## Beslutninger undervejs — automatisk flytning ved sæsonskifte
+
+Ønske: hvert år rykker en del spillere op en årgang (fx nogle af U14's 21
+spillere bliver til U16 spillere næste sæson). Det skal ikke kræve manuel
+flytning af hver enkelt spiller, én ad gangen, når det nye holds fil
+importeres.
+
+**Problemet dette løser:** `spillere` genkendes ved import på (navn, hold)
+— se punktet ovenfor. Ændrer en spiller hold (fordi et helt nyt holdnavn,
+fx U16, importeres), ville en almindelig import derfor oprette en HELT NY
+spiller-række i stedet for at opdatere den gamle. Det ville i praksis
+betyde: saldoen nulstilles, hele historikken mistes, og der udstedes en ny
+QR-kode — stik imod kravspecifikationens egen regel (afsnit 5.5):
+"Spilleren skifter hold. Saldoen følger spilleren. QR-koden er uændret."
+
+- **Holdsports eksport har intet stabilt id** at genkende en person på
+  tværs af hold med — kun navn og forældrenes kontaktoplysninger. Navn
+  alene er ikke nok (to forskellige børn kan hedde det samme, særligt på
+  tværs af årgange i en større klub), så afgørelsen kræver et STÆRKERE
+  signal: **mindst én fælles forældre-mailadresse** mellem den indkommende
+  række og en eksisterende spiller på et andet hold.
+- **Ny, ren funktion `findSikkerFlytning`** (`lib/import/flyt.ts`,
+  testet uden database i `flyt.test.ts`) tager afgørelsen: præcis én
+  kandidat med en fælles mailadresse er en sikker flytning. Ingen fælles
+  mail, eller flere forskellige hold der hver har en kandidat med fælles
+  mail, er for usikkert — så oprettes der i stedet en helt ny spiller, som
+  hidtil, med en bemærkning om at tjekke det manuelt.
+- **Forhåndsvisningen** (`app/api/import/forhaandsvisning/route.ts`) slår
+  op på tværs af hold og viser afgørelsen som en bemærkning FØR noget
+  gemmes — enten "Flytter fra andet hold — saldo og historik følger med"
+  (sikker flytning) eller en bemærkning om at tjekke det manuelt (navn
+  matcher, men ingen fælles kontakt). Genbruger den eksisterende
+  bemærknings-liste og -visning, ingen ny UI krævet — holdlederen ser det,
+  akkurat som alle andre bemærkninger fra en import, og kan annullere hvis
+  noget ser forkert ud.
+- **Selve flytningen sker ved bekræftelsen** (`lib/import/gem.ts`) ved at
+  opdatere den eksisterende spillers `hold`-felt (og sætte `aktiv: true`)
+  — samme række, samme `id`, samme `qrToken`, uberørte `bevaegelser`.
+  Afgørelsen genberegnes her, uafhængigt af forhåndsvisningen, frem for at
+  stole på noget klienten sendte tilbage (samme forsigtighed som alle
+  andre steder brugerinput valideres server-side).
+- **Kun mulig fordi import er forbeholdt kasserer/administrator** (se
+  "Beslutninger undervejs — import kun for kasserer/administrator") — de
+  har allerede fuld adgang til alle hold, så opslag på tværs af hold under
+  en import rejser ikke noget adgangsspørgsmål, det ville have gjort for
+  en holdleder skarpt afgrænset til ét hold.
+- **`ImportSkriveResultat` har nu et tredje tal, `spillereFlyttet`**, ved
+  siden af oprettet/opdateret, vist på kvitteringsskærmen efter en
+  gennemført import — så det er tydeligt for holdlederen, hvor mange der
+  blev genkendt fra et andet hold, ikke kun hvor mange der var helt nye.
+
+## Beslutninger undervejs — mails med rigtigt design
+
+Ønske: de tre mails (advarsel, rykker, kvittering) var indtil nu ren tekst
+i html-tøj — ingen farver, ingen visuel identitet, kun `<p>`- og
+`<a>`-tags. De skal se mere indbydende ud og ligne klubben.
+
+- **Tabel-baseret markup med inline stilarter, med vilje** — ikke en
+  klasse, et `<style>`-ark eller en ekstern skabelon-motor (fx MJML). Det
+  er den eneste slags markup, der er til at stole på i Outlook, Gmail og
+  Apple Mail på samme tid; almindelig moderne CSS (flexbox, grid,
+  gradients, eksterne stylesheets) understøttes upålideligt eller slet
+  ikke i mail. Ingen ny afhængighed — samme "kedelig kode"-linje som
+  resten af projektet, blot anvendt på html-mail-format i stedet for på
+  almindelig web-CSS.
+- **Ingen billeder, heller ikke klubbens logo** — en rød 6px-stribe øverst
+  (klubbens accentfarve som en ren baggrundsfarve, ikke et billede eller
+  en gradient) plus et lille "AALBORG ISHOCKEY KLUB"-tekstmærke giver
+  branding uden risikoen for et ødelagt eller blokeret billede i
+  modtagerens indbakke. Kan skiftes til det rigtige logo, når systemet er
+  deployet og har en rigtig `APP_URL` at hente billedet fra — lokalt ville
+  et billede alligevel ikke kunne loades hos modtageren.
+- **Samme farver som selve appen** (`--accent`, `--sund`/`--sund-lys` osv.
+  fra `app/globals.css`), duplikeret som konstanter øverst i
+  `lib/mails/skabeloner.ts` — ikke importeret fra CSS'en, for mail-html
+  kan ikke læse en ekstern CSS-fil. Kvitteringens tre tal står i en
+  lysegrøn boks, samme farve som en sund saldo i overblikket, så "det
+  lykkedes" ser ens ud begge steder.
+- **Knappen er en farvelagt tabel-celle med et link indeni**, ikke et
+  `<a>` med en CSS-baggrund direkte på sig — det sidste gengives
+  upålideligt i Outlook. Et almindeligt, "kedeligt" mail-mønster, ikke
+  noget hjemmelavet.
+- **`tekst`-udgaven af alle tre mails er helt uændret** — kun `html` er
+  omskrevet. Ren tekst er stadig den fulde besked, ikke en forkortet
+  udgave, til klienter og skærmlæsere der ikke viser html.
+- **Afprøvet med rigtige mails**, ikke kun visuelt i en browser — alle tre
+  skabeloner sendt til et rigtigt postkasse via Resend under udviklingen,
+  inklusive to-børns-udgaven af advarsel/rykker, for at se den tynde linje
+  mellem søskende gøre sin nytte.

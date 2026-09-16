@@ -106,6 +106,10 @@ export default function ImportSide() {
           <h2>Import gennemført</h2>
           <p>{tilstand.resultat.spillereOprettet} nye spillere</p>
           <p>{tilstand.resultat.spillereOpdateret} eksisterende spillere opdateret</p>
+          <p>
+            {tilstand.resultat.spillereFlyttet} spillere flyttet fra et andet
+            hold (saldo og historik fulgte med)
+          </p>
           <p>{tilstand.resultat.voksneOprettet} nye voksne</p>
           <p>{tilstand.resultat.voksneGenbrugt} voksne genbrugt (fx søskende)</p>
           <p>

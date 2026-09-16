@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import type { ImportSpiller } from "./holdsport";
+import { findSikkerFlytning } from "./flyt";
 
 export type ImportSkriveResultat = {
   spillereOprettet: number;
   spillereOpdateret: number;
+  spillereFlyttet: number;
   voksneOprettet: number;
   voksneGenbrugt: number;
 };
@@ -13,12 +15,19 @@ export type ImportSkriveResultat = {
  * navn+hold, en voksen på mail (når den er sat) — se CLAUDE.md for hvorfor.
  * Rører aldrig bevaegelser, betalinger eller mails: saldo og historik skal
  * være upåvirket af at importere den samme fil igen.
+ *
+ * En spiller der findes på et ANDET hold, med mindst én fælles
+ * forældrekontakt, flyttes i stedet for at blive oprettet på ny — se
+ * lib/import/flyt.ts og CLAUDE.md. Det er den samme afgørelse, som
+ * forhåndsvisningen allerede har vist som en bemærkning, blot genberegnet
+ * her frem for at stole på noget klienten sendte tilbage.
  */
 export async function gemImport(
   spillere: ImportSpiller[],
 ): Promise<ImportSkriveResultat> {
   let spillereOprettet = 0;
   let spillereOpdateret = 0;
+  let spillereFlyttet = 0;
   let voksneOprettet = 0;
   let voksneGenbrugt = 0;
 
@@ -27,19 +36,42 @@ export async function gemImport(
       where: { navn_hold: { navn: s.navn, hold: s.hold } },
     });
 
-    const spiller = eksisterende
-      ? await prisma.spiller.update({
-          where: { id: eksisterende.id },
-          data: { aktiv: true },
-        })
-      : await prisma.spiller.create({
-          data: { navn: s.navn, hold: s.hold },
-        });
-
+    let spiller;
     if (eksisterende) {
+      spiller = await prisma.spiller.update({
+        where: { id: eksisterende.id },
+        data: { aktiv: true },
+      });
       spillereOpdateret++;
     } else {
-      spillereOprettet++;
+      const kandidaterRaa = await prisma.spiller.findMany({
+        where: { navn: s.navn, hold: { not: s.hold }, aktiv: true },
+        include: { relationer: { include: { voksen: true } } },
+      });
+      const indkommendeMails = s.voksne
+        .map((v) => v.email)
+        .filter((e): e is string => !!e);
+      const kandidater = kandidaterRaa.map((k) => ({
+        spillerId: k.id,
+        hold: k.hold,
+        voksenMails: k.relationer
+          .map((r) => r.voksen.email)
+          .filter((e): e is string => !!e),
+      }));
+      const flytning = findSikkerFlytning(indkommendeMails, kandidater);
+
+      if (flytning) {
+        spiller = await prisma.spiller.update({
+          where: { id: flytning.spillerId },
+          data: { hold: s.hold, aktiv: true },
+        });
+        spillereFlyttet++;
+      } else {
+        spiller = await prisma.spiller.create({
+          data: { navn: s.navn, hold: s.hold },
+        });
+        spillereOprettet++;
+      }
     }
 
     for (const v of s.voksne) {
@@ -77,5 +109,11 @@ export async function gemImport(
     }
   }
 
-  return { spillereOprettet, spillereOpdateret, voksneOprettet, voksneGenbrugt };
+  return {
+    spillereOprettet,
+    spillereOpdateret,
+    spillereFlyttet,
+    voksneOprettet,
+    voksneGenbrugt,
+  };
 }

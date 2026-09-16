@@ -28,7 +28,10 @@ export default async function SpillerSide({
   const spiller = await prisma.spiller.findUnique({
     where: { id },
     include: {
-      bevaegelser: { orderBy: { tidspunkt: "desc" } },
+      bevaegelser: {
+        include: { udfoertAf: true },
+        orderBy: { tidspunkt: "desc" },
+      },
       relationer: { include: { voksen: true } },
       mails: { orderBy: { tidspunkt: "desc" }, take: 10 },
     },
@@ -180,6 +183,7 @@ export default async function SpillerSide({
               <th>Tidspunkt</th>
               <th>Type</th>
               <th>Antal</th>
+              <th>Udført af</th>
               <th>Note</th>
             </tr>
           </thead>
@@ -189,6 +193,10 @@ export default async function SpillerSide({
                 <td>{new Date(b.tidspunkt).toLocaleString("da-DK")}</td>
                 <td>{b.type}</td>
                 <td>{b.antal}</td>
+                {/* Kun MobilePay-webhookens automatiske kreditering har
+                    ingen udfoertAf — alt andet (scanning, rettelse,
+                    fortrydelse) kræver et logget ind menneske. */}
+                <td>{b.udfoertAf?.navn ?? "Automatisk (MobilePay)"}</td>
                 <td>{b.note}</td>
               </tr>
             ))}
