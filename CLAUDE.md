@@ -1147,3 +1147,31 @@ reelt udførte den — ikke bare "iPad'en".
   fx en iPad)" (`afprovDeltSliber` i `app/afprov-som/actions.ts`) — uden
   den ville den delte konto slet ikke kunne afprøves lokalt uden en rigtig
   administrator-oprettet konto først.
+
+## Beslutninger undervejs — fejl: `<input>` uden `type="text"` overalt
+
+Fejl: "Dit navn"-feltet (se lige ovenfor) så meget minimalistisk og
+ustylet ud — intet kant-radius, tynd sort "inset"-kant, næsten ingen
+padding. Årsagen var, at selve `<input>`-elementet manglede
+`type="text"`. Al input-styling i `app/globals.css` er skrevet som
+`input[type="text"]`, `input[type="email"]` osv. — en CSS-attributselektor
+matcher kun, når attributten faktisk står i markup'et. Uden `type` sætter
+browseren ganske vist input'ets *opførsel* til tekst, men ikke selve
+`type`-attributten i DOM'en, så ingen af app'ens input-regler ramte den,
+og feltet faldt helt tilbage til browserens rå, ustylede standardudseende.
+
+- **Samme fejl fandtes syv andre steder**, ikke kun i det nye felt —
+  eftersøgt systematisk på tværs af alle `<input>` i `app/`, ikke kun
+  rettet der hvor den blev opdaget: QR-kode-feltet på `/slib` (manuel
+  indtastning), voksnes navn/telefon og saldo-rettelsens note på en
+  spillers side, navn og hold i "Giv eller ret adgang", hold-feltet på
+  `/import`, og holdnavnet i `/afprov-som`s holdleder-formular. Alle har
+  nu `type="text"`, ren tilføjelse, ingen ændring af hvordan formularerne
+  opfører sig eller sender data.
+- **"Dit navn" har desuden fået sin egen klasse**, `.udfoert-af-navn-felt`
+  — større skrift på både label og selve feltet end en almindelig
+  formular-linje, fordi det er et påkrævet felt på en trykskærm (en
+  iPad), ikke en valgfri detalje man nemt skal kunne overse. De øvrige
+  rettede felter beholder den almindelige, delte input-stil — kun dette
+  ene fik ekstra vægt, fordi det er det eneste af dem, der reelt kan
+  blokere en handling, hvis det ikke lægges mærke til.

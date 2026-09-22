@@ -67,6 +67,7 @@ export default async function AfprovSomSide() {
             </select>
           ) : (
             <input
+              type="text"
               name="hold"
               placeholder="Holdnavn (fx U9)"
               defaultValue="U9"

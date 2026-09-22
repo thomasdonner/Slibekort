@@ -881,3 +881,22 @@ th {
   font-size: 0.85rem;
   text-align: center;
 }
+
+/* "Dit navn" på /slib, kun vist for en delt konto (fx en iPad i
+   sliberummet) — større skrift og et rummeligere tekstfelt end en
+   almindelig formular-linje, fordi det er et påkrævet felt på en
+   trykskærm, ikke en valgfri detalje man kan overse. Selve input't
+   manglede tidligere type="text", så ingen af app'ens input-stilarter
+   ramte det (de er alle skrevet som input[type="text"] osv.) — det faldt
+   helt tilbage til browserens rå, ustylede standardudseende. */
+.udfoert-af-navn-felt {
+  color: var(--tekst);
+  font-size: 1rem;
+  font-weight: 600;
+  max-width: 320px;
+}
+
+.udfoert-af-navn-felt input {
+  font-size: 1.15rem;
+  padding: 0.85rem 1rem;
+}

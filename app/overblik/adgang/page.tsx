@@ -38,7 +38,7 @@ export default async function AdgangSide() {
           </label>
           <label>
             Navn
-            <input name="navn" />
+            <input type="text" name="navn" />
           </label>
           <fieldset>
             <legend>Roller</legend>
@@ -58,7 +58,7 @@ export default async function AdgangSide() {
           </fieldset>
           <label>
             Hold (kun for holdleder, kommasepareret)
-            <input name="hold" placeholder="U14, U16" />
+            <input type="text" name="hold" placeholder="U14, U16" />
           </label>
           <fieldset>
             <legend>Delt konto</legend>

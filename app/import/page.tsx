@@ -65,6 +65,7 @@ export default function ImportSide() {
           <label>
             Hold
             <input
+              type="text"
               name="hold"
               value={hold}
               onChange={(event) => setHold(event.target.value)}

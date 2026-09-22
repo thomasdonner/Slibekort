@@ -85,7 +85,7 @@ export default async function SpillerSide({
             <input type="hidden" name="voksenId" value={relation.voksenId} />
             <label>
               Navn
-              <input name="navn" defaultValue={relation.voksen.navn ?? ""} />
+              <input type="text" name="navn" defaultValue={relation.voksen.navn ?? ""} />
             </label>
             <label>
               E-mail
@@ -97,7 +97,7 @@ export default async function SpillerSide({
             </label>
             <label>
               Telefon
-              <input name="telefon" defaultValue={relation.voksen.telefon ?? ""} />
+              <input type="text" name="telefon" defaultValue={relation.voksen.telefon ?? ""} />
             </label>
             <button type="submit">Gem</button>
           </form>
@@ -116,7 +116,7 @@ export default async function SpillerSide({
               </label>
               <label>
                 Note
-                <input name="note" placeholder="Hvorfor?" />
+                <input type="text" name="note" placeholder="Hvorfor?" />
               </label>
               <button type="submit">Ret saldo</button>
             </form>

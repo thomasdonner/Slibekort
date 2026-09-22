@@ -304,6 +304,7 @@ function Scanner({
         }}
       >
         <input
+          type="text"
           value={manueltToken}
           onChange={(event) => onManueltTokenAendret(event.target.value)}
           placeholder="QR-kode"
@@ -467,9 +468,10 @@ function Bekraeftelsesskaerm({
         <p>Ingen forbindelse lige nu — viser sidst kendte saldo.</p>
       )}
       {delt && (
-        <label>
+        <label className="udfoert-af-navn-felt">
           Dit navn
           <input
+            type="text"
             value={udfoertAfNavn}
             onChange={(event) => onUdfoertAfNavnAendret(event.target.value)}
             placeholder="Dit navn"
