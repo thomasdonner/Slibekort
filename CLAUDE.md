@@ -1049,3 +1049,42 @@ permanent.
   refererer allerede udelukkende til `--baggrund`/`--flade`/`--kant`
   (ingen hårdkodede hvide baggrunde noget sted), så ændringen slår
   automatisk igennem alle sider uden andre rettelser.
+
+## Beslutninger undervejs — fejl: navne der stak ud over spillerkortet
+
+Fejl: flere spillernavne (typisk med et dobbelt efternavn) stak visuelt ud
+over kanten af deres kort i "Vælg spiller"-gitteret på `/slib`.
+
+To forskellige årsager, fundet i den rækkefølge de blev rettet:
+
+- **`.spiller-vaelg-navn` manglede en bredde.** `.spiller-vaelg-kort` har
+  `align-items: center` (kortets tværakse, da det er en `flex-direction:
+  column`), som lader et flex-element størrelsesbestemme sig efter sit
+  eget indhold i stedet for at strække sig til kortets fulde bredde —
+  uden en eksplicit `width: 100%` regnede navnet sin egen, ubrudte
+  linjebredde ud, i stedet for at ombrække inden for kortet.
+- **Et hårdt mellemrum (U+00A0) midt i nogle dobbelte efternavne**, fx
+  "Ladegaard␠Adamsen" i stedet for et almindeligt mellemrum — formentlig
+  fra Holdsports xlsx-eksport, med vilje sat for at holde et dobbelt
+  efternavn samlet på én linje i et bredere dokument. På et smalt kort er
+  der ikke plads til det som én blok: almindelig ombrækning nægtede
+  (korrekt) at bryde ved det hårde mellemrum, så blokken stak uden om
+  kortets kant i stedet. Bekræftet præcist ved at måle med
+  `Range.getClientRects()` i browseren (ikke kun ved at kigge) — samme
+  overspring, målt i pixels, uanset om `text-wrap: normal` eller
+  `text-wrap: balance` blev brugt, hvilket viste at årsagen ikke var
+  linjedelingsstrategien, men selve det hårde mellemrum.
+- **Rettet med `tilOmbrydeligtNavn`** (`app/slib/page.tsx`) — erstatter
+  U+00A0 med et almindeligt mellemrum, men kun i selve visningen på dette
+  kort, ikke i databasens `spillere.navn`. Navnet kan stadig have brug
+  for det hårde mellemrum andre steder (fx en trykt rapport eller en
+  mail, hvor der er plads nok til at det giver mening at holde
+  efternavnet samlet) — dette er en visningsrettelse for én smal
+  komponent, ikke en oprydning af selve dataen.
+- **`overflow-wrap: break-word` er tilføjet som sikkerhedsnet**, ikke som
+  selve rettelsen — det dækker et enkelt, ægte langt ord uden mellemrum
+  overhovedet (usandsynligt, men billigt at dække).
+- **`text-wrap: balance` blev fravalgt igen** efter at være afprøvet for
+  et pænere linjeskift — den løste ikke det underliggende problem (det
+  hårde mellemrum), og almindelig ombrækning var lige så korrekt, bare
+  kedeligere.

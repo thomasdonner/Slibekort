@@ -857,10 +857,24 @@ th {
   background: var(--fare-lys);
 }
 
+/* width: 100% er ikke kosmetisk — uden den arver spannet kortets
+   align-items: center (fit-content i stedet for kortets fulde bredde),
+   og et langt navn regner så sin egen, ubrudte linjebredde ud i stedet
+   for at ombrække, hvilket lod det stikke ud over kortets kant.
+   overflow-wrap er et sikkerhedsnet, ikke selve rettelsen — det egentlige
+   problem var et hårdt mellemrum midt i nogle dobbelte efternavne (se
+   tilOmbrydeligtNavn i page.tsx), som gjorde et to-ords efternavn til én
+   ombrydelig-umulig blok. Målt med Range.getClientRects i browseren:
+   almindelig ombrækning (uden denne linje) lod den blok stikke op til
+   30px ud over kortet, fordi den ikke måtte brydes ved det hårde
+   mellemrum. Denne linje er kun der for et enkelt, ægte langt ord uden
+   mellemrum overhovedet. */
 .spiller-vaelg-navn {
-  font-size: 0.92rem;
+  width: 100%;
+  font-size: 0.95rem;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.3;
+  overflow-wrap: break-word;
 }
 
 .spiller-vaelg-kort .tal {

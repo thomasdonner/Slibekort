@@ -281,6 +281,18 @@ function Scanner({
 
 type SpillerRaekke = { spillerId: string; qrToken: string; navn: string; saldo: number };
 
+// Nogle navne fra Holdsport-eksporten har et hårdt mellemrum (U+00A0,
+// ikke et almindeligt mellemrum) i et dobbelt efternavn, formentlig for
+// at holde det sammen på én linje i et almindeligt, bredt dokument. På
+// et smalt kort her er der ikke plads nok til det — et hårdt mellemrum
+// forhindrer ombrækning, så navnet stak ud over kortets kant i stedet
+// for at ombrække som resten af navnet. Rettes kun i visningen her, ikke
+// i selve navnet i databasen (som stadig kan have brug for det andre
+// steder, fx en udskrevet rapport).
+function tilOmbrydeligtNavn(navn: string): string {
+  return navn.replace(/ /g, " ");
+}
+
 // Genbruger saldoKlasse (lib/ui/saldo-klasse.ts) i stedet for sin egen
 // tærskel-logik for cirklens farve — "tal-sund" bliver til
 // "spiller-vaelg-avatar-sund", så farven altid følger den ene, delte
@@ -377,7 +389,7 @@ function VaelgSpiller({ onValgt }: { onValgt: (qrToken: string) => void }) {
                     {/* eslint-disable-next-line @next/next/no-img-element -- lille, statisk SVG, next/image tilføjer intet her */}
                     <img src="/aaik-logo.svg" alt="" />
                   </span>
-                  <span className="spiller-vaelg-navn">{s.navn}</span>
+                  <span className="spiller-vaelg-navn">{tilOmbrydeligtNavn(s.navn)}</span>
                   <span className={`tal ${saldoKlasse(s.saldo)}`}>{s.saldo}</span>
                 </button>
               </li>
