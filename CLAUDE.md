@@ -983,8 +983,33 @@ holdes op mod en skøjtepose.
   `/afprov-som`) allerede bruger — den slibes stadig ved at scanne dens
   egen printede kode i "Scan QR-kode", ikke ved at vælges fra en liste af
   rigtige hold.
-- **Spillerlisten viser saldo ved siden af hvert navn** (samme
+- **Spillerlisten viser saldo på hvert kort** (samme
   `saldoKlasse`-farvekodning som resten af appen), så sliberen kan se en
   lav saldo, mens de alligevel kigger på listen — ingen ekstra
   databaseforespørgsel, saldoen var allerede med i samme opslag som
   navn og qrToken.
+
+**Sidenhen gjort til et gitter af kort, efter ønske om et mere "lækkert"
+udtryk** — den oprindelige udgave var en smal, fuldbredde liste af
+tekstrækker (én spiller pr. linje), som virkede kedelig og lidt tung at
+scanne visuelt på en iPad med 20+ spillere på ét hold.
+
+- **Hvert kort har en farvet cirkel med spillerens initialer**
+  (`spillerInitialer` i `app/slib/page.tsx`), samme idé som
+  `.rapport-kort`s ikon-cirkel og `.kvittering-ikon` — men cirklens farve
+  er ikke tilfældig pynt: den er `saldoKlasse(saldo)` (samme funktion som
+  farver selve saldotallet), så en rød cirkel betyder det samme som et
+  rødt tal andre steder i appen. `avatarKlasse` oversætter blot
+  `"tal-sund"` til `"spiller-vaelg-avatar-sund"` — ingen ny,
+  uafhængig tærskel-logik at holde synkron med den oprindelige.
+- **Ny CSS-variabel, `--advarsel`/`--advarsel-lys`** (lys og mørk
+  udgave, `app/globals.css`), sat op parallelt med det eksisterende
+  `--sund`/`--fare`-par — den manglede, fordi saldo-tilstanden "1 tilbage"
+  hidtil kun var en tekstfarve (`.tal-advarsel`, hårdkodet `#9a6b00`),
+  aldrig en baggrund. `.tal-advarsel` er samtidig rettet til at bruge den
+  samme variabel, så der nu kun er ét sted den gule advarselsfarve er
+  defineret, ikke to.
+- **Gitteret (`repeat(auto-fill, minmax(132px, 1fr))`)** giver omkring
+  5 kort pr. række inden for `main`s `max-width: 760px` — bredt nok til
+  et solidt tryk-mål pr. kort, tæt nok til at et helt hold kan overskues
+  uden at scrolle alt for meget på en iPad.

@@ -14,6 +14,8 @@
   --fare-lys: #f6e9e9;
   --sund: #1a7a4a;
   --sund-lys: #e8f5ee;
+  --advarsel: #9a6b00;
+  --advarsel-lys: #fbf1d9;
   --skygge: 0 1px 2px rgba(15, 15, 15, 0.04), 0 8px 24px -10px rgba(15, 15, 15, 0.12);
   --skygge-flydende: 0 4px 10px rgba(15, 15, 15, 0.06), 0 16px 32px -12px rgba(15, 15, 15, 0.18);
   --accent-gloed: rgba(221, 47, 47, 0.32);
@@ -38,6 +40,8 @@
     --fare-lys: #3a2222;
     --sund: #6cc99a;
     --sund-lys: #1c2f26;
+    --advarsel: #e0b04c;
+    --advarsel-lys: #362c14;
     --skygge: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -10px rgba(0, 0, 0, 0.5);
     --skygge-flydende: 0 4px 10px rgba(0, 0, 0, 0.4), 0 16px 32px -12px rgba(0, 0, 0, 0.6);
     --accent-gloed: rgba(234, 76, 76, 0.4);
@@ -501,7 +505,7 @@ th {
 }
 
 .tal-advarsel {
-  color: #9a6b00;
+  color: var(--advarsel);
 }
 
 .tal-kritisk {
@@ -778,43 +782,82 @@ th {
   color: var(--accent-tekst);
 }
 
-/* Spillerlisten i "Vælg spiller"-fanen — store, fuldbredde rækker, ikke en
+/* Spillerlisten i "Vælg spiller"-fanen — et gitter af kort, ikke en
    almindelig <ul> med tekstlinjer. Sliberen bruger den ofte fra en iPad i
-   sliberummet, så tryk-målet skal være stort og tydeligt, ligesom
-   .rapport-kort er det for hold-listen i overblikket. */
+   sliberummet, så tryk-målet skal være stort og tydeligt, og et helt kort
+   pr. spiller er nemmere at ramme (og rarere at kigge på) end en smal
+   tekstlinje — samme tanke som .rapport-kort for hold-listen i
+   overblikket, blot med et farvet initial-ikon i stedet for et
+   dokument-ikon, så en spillers status (saldoKlasse) ses på afstand. */
 .spiller-vaelg-liste {
   list-style: none;
   padding: 0;
   margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 0.85rem;
 }
 
-.spiller-vaelg-raekke {
+.spiller-vaelg-kort {
   display: flex;
-  width: 100%;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 1.1rem;
+  width: 100%;
+  gap: 0.65rem;
+  padding: 1.4rem 0.75rem 1.1rem;
   background: var(--flade);
   color: var(--tekst);
   border: 1px solid var(--kant);
-  border-radius: var(--radius-lille);
+  border-radius: var(--radius);
   box-shadow: var(--skygge);
-  font-size: 1.05rem;
-  font-weight: 600;
-  text-align: left;
+  text-align: center;
 }
 
-.spiller-vaelg-raekke:hover {
+.spiller-vaelg-kort:hover {
   border-color: var(--accent);
   box-shadow: var(--skygge-flydende);
   filter: none;
-  transform: none;
+  transform: translateY(-2px);
 }
 
-.spiller-vaelg-raekke .tal {
-  font-size: 1.1rem;
+/* Cirklen med spillerens initialer — farven er den samme saldoKlasse som
+   resten af appen bruger til selve saldotallet (lib/ui/saldo-klasse.ts),
+   så en rød eller gul cirkel betyder det samme her som andre steder,
+   ikke en ny, uafhængig farveskala. */
+.spiller-vaelg-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 999px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.spiller-vaelg-avatar-sund {
+  background: var(--sund-lys);
+  color: var(--sund);
+}
+
+.spiller-vaelg-avatar-advarsel {
+  background: var(--advarsel-lys);
+  color: var(--advarsel);
+}
+
+.spiller-vaelg-avatar-kritisk {
+  background: var(--fare-lys);
+  color: var(--fare);
+}
+
+.spiller-vaelg-navn {
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.spiller-vaelg-kort .tal {
+  font-size: 0.85rem;
+  text-align: center;
 }

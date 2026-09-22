@@ -281,6 +281,24 @@ function Scanner({
 
 type SpillerRaekke = { spillerId: string; qrToken: string; navn: string; saldo: number };
 
+// Fornavnets og efternavnets forbogstav, til kortets cirkel. Et enkelt
+// navn (intet mellemrum) giver i stedet de to første bogstaver.
+function spillerInitialer(navn: string): string {
+  const dele = navn.trim().split(/\s+/);
+  const sidste = dele[dele.length - 1];
+  return dele.length > 1
+    ? `${dele[0][0]}${sidste[0]}`.toUpperCase()
+    : navn.slice(0, 2).toUpperCase();
+}
+
+// Genbruger saldoKlasse (lib/ui/saldo-klasse.ts) i stedet for sin egen
+// tærskel-logik for cirklens farve — "tal-sund" bliver til
+// "spiller-vaelg-avatar-sund", så farven altid følger den ene, delte
+// definition af sund/advarsel/kritisk saldo, uanset hvor den bruges.
+function avatarKlasse(saldo: number): string {
+  return saldoKlasse(saldo).replace("tal-", "spiller-vaelg-avatar-");
+}
+
 // Alternativet til at scanne: hold vælges først, så spillerne på det hold.
 // Et klik på en spiller kalder onValgt(qrToken) — samme qrToken som en
 // rigtig scanning ville have givet, så resten af siden (bekræftelse,
@@ -362,10 +380,13 @@ function VaelgSpiller({ onValgt }: { onValgt: (qrToken: string) => void }) {
               <li key={s.spillerId}>
                 <button
                   type="button"
-                  className="spiller-vaelg-raekke"
+                  className="spiller-vaelg-kort"
                   onClick={() => onValgt(s.qrToken)}
                 >
-                  <span>{s.navn}</span>
+                  <span className={`spiller-vaelg-avatar ${avatarKlasse(s.saldo)}`}>
+                    {spillerInitialer(s.navn)}
+                  </span>
+                  <span className="spiller-vaelg-navn">{s.navn}</span>
                   <span className={`tal ${saldoKlasse(s.saldo)}`}>{s.saldo}</span>
                 </button>
               </li>
