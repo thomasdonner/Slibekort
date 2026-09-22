@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { kraevSliber } from "@/lib/kraev-sliber";
 import { beregnSaldo } from "@/lib/saldo";
 import { erIndenforFortrydelsesvindue } from "@/lib/slibning";
+import { erGyldigtUdfoertAfNavn } from "@/lib/delt-konto";
 
 export async function POST(request: Request) {
   const adgang = await kraevSliber();
@@ -28,6 +29,20 @@ export async function POST(request: Request) {
       { fejl: "bevaegelseId, klientId og besluttetTidspunkt er påkrævet." },
       { status: 400 },
     );
+  }
+
+  // Samme regel som ved selve trækket (se /api/slib/traek) — kontoen bag
+  // en fortrydelse er stadig den delte konto, ikke en bestemt person.
+  let udfoertAfNavn: string | null = null;
+  if (adgang.delt) {
+    const raaNavn = body?.udfoertAfNavn;
+    if (typeof raaNavn !== "string" || !erGyldigtUdfoertAfNavn(raaNavn)) {
+      return NextResponse.json(
+        { fejl: "Skriv dit navn — kontoen er delt." },
+        { status: 400 },
+      );
+    }
+    udfoertAfNavn = raaNavn.trim();
   }
 
   const eksisterende = await prisma.bevaegelse.findUnique({
@@ -76,6 +91,7 @@ export async function POST(request: Request) {
         type: "fortrudt",
         antal: -original.antal,
         udfoertAfId: adgang.brugerId,
+        udfoertAfNavn,
         klientId,
         oprindeligId: original.id,
       },

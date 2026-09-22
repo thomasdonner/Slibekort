@@ -48,6 +48,7 @@ async function opretEllerGenbrugBruger(
   noegle: string,
   navn: string,
   roller: Rolle[],
+  delt = false,
 ) {
   const email = afprovEmail(noegle);
   const user = await prisma.user.upsert({
@@ -57,8 +58,8 @@ async function opretEllerGenbrugBruger(
   });
   await prisma.bruger.upsert({
     where: { userId: user.id },
-    update: { roller, navn, aktiv: true },
-    create: { userId: user.id, navn, roller, aktiv: true },
+    update: { roller, navn, aktiv: true, delt },
+    create: { userId: user.id, navn, roller, aktiv: true, delt },
   });
   return user.id;
 }
@@ -73,6 +74,23 @@ export async function afprovRolle(rolle: Rolle) {
   ]);
   const gaaTil = rolle === "sliber" ? "/slib" : "/overblik";
   await opretSessionOgLogInd(userId, gaaTil);
+}
+
+// Til at afprøve den delte konto (fx en iPad i sliberummet, se
+// CLAUDE.md) — samme opsætning som en almindelig sliber, blot med
+// Bruger.delt sat, så /slib beder om et navn ved hver slibning.
+export async function afprovDeltSliber() {
+  if (!erUdviklingsmiljoe()) {
+    throw new Error("Kun tilgængelig i udviklingsmiljø");
+  }
+
+  const userId = await opretEllerGenbrugBruger(
+    "sliber-delt",
+    "Afprøv: Delt konto (iPad)",
+    ["sliber"],
+    true,
+  );
+  await opretSessionOgLogInd(userId, "/slib");
 }
 
 export async function afprovHoldleder(holdNavn: string) {

@@ -8,6 +8,7 @@ declare module "next-auth" {
       brugerId: string | null;
       roller: Rolle[];
       aktiv: boolean;
+      delt: boolean;
     } & DefaultSession["user"];
   }
 }

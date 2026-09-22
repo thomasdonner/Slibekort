@@ -195,8 +195,13 @@ export default async function SpillerSide({
                 <td>{b.antal}</td>
                 {/* Kun MobilePay-webhookens automatiske kreditering har
                     ingen udfoertAf — alt andet (scanning, rettelse,
-                    fortrydelse) kræver et logget ind menneske. */}
-                <td>{b.udfoertAf?.navn ?? "Automatisk (MobilePay)"}</td>
+                    fortrydelse) kræver et logget ind menneske.
+                    udfoertAfNavn er kun sat på en delt konto (fx en iPad i
+                    sliberummet) — sliberens eget indtastede navn er mere
+                    brugbart end selve kontoens navn i det tilfælde. */}
+                <td>
+                  {b.udfoertAfNavn ?? b.udfoertAf?.navn ?? "Automatisk (MobilePay)"}
+                </td>
                 <td>{b.note}</td>
               </tr>
             ))}

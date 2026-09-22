@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { kraevSliber } from "@/lib/kraev-sliber";
 import { beregnSaldo } from "@/lib/saldo";
 import { erIndenforSpaerretid } from "@/lib/slibning";
+import { erGyldigtUdfoertAfNavn } from "@/lib/delt-konto";
 import { tjekOgSendPaamindelser } from "@/lib/mails/send";
 
 // Kaldes efter svaret er sendt, så sliberens telefon ikke venter på en
@@ -38,6 +39,22 @@ export async function POST(request: Request) {
       { fejl: "spillerId og klientId er påkrævet." },
       { status: 400 },
     );
+  }
+
+  // Kun relevant for en delt konto (fx en iPad i sliberummet) — se
+  // Bruger.delt. udfoertAfId peger allerede på kontoen; dette er sliberens
+  // eget navn, indtastet i UI'et, fordi kontoen i sig selv ikke fortæller
+  // hvem der fysisk trykkede.
+  let udfoertAfNavn: string | null = null;
+  if (adgang.delt) {
+    const raaNavn = body?.udfoertAfNavn;
+    if (typeof raaNavn !== "string" || !erGyldigtUdfoertAfNavn(raaNavn)) {
+      return NextResponse.json(
+        { fejl: "Skriv dit navn — kontoen er delt." },
+        { status: 400 },
+      );
+    }
+    udfoertAfNavn = raaNavn.trim();
   }
 
   // Samme scanning kan komme igen, hvis telefonen sender den igen efter
@@ -96,6 +113,7 @@ export async function POST(request: Request) {
         type: "slibning",
         antal: -1,
         udfoertAfId: adgang.brugerId,
+        udfoertAfNavn,
         klientId,
         note,
       },

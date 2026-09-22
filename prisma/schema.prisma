@@ -72,6 +72,10 @@ model Bevaegelse {
   tidspunkt    DateTime       @default(now())
   // Null når bevaegelsen er skabt automatisk, fx et koeb fra MobilePay-webhooken.
   udfoertAfId  String?
+  // Kun sat når udfoertAf er en delt konto (fx en iPad i sliberummet) —
+  // se Bruger.delt. Et frit tekstfelt sliberen selv indtaster, fordi
+  // udfoertAfId her peger på den delte konto, ikke en bestemt person.
+  udfoertAfNavn String?
   note         String?
   // Nøgle fra telefonen, forhindrer at en genafsendt offline-scanning tæller to gange.
   klientId     String         @unique
@@ -155,6 +159,12 @@ model Bruger {
   navn     String
   roller   Rolle[]
   aktiv    Boolean  @default(true)
+  // Én konto brugt af flere personer, fx en iPad der står fast i
+  // sliberummet — ikke en personlig konto. Når en bevaegelse er udført af
+  // en delt konto, indtaster sliberen selv sit navn i et fritekstfelt
+  // (Bevaegelse.udfoertAfNavn), så historikken stadig kan vise en rigtig
+  // person, ikke bare "iPad".
+  delt     Boolean  @default(false)
   oprettet DateTime @default(now())
 
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)

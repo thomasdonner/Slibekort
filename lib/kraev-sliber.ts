@@ -1,7 +1,7 @@
 import { auth } from "./auth";
 
 type Adgang =
-  | { ok: true; brugerId: string }
+  | { ok: true; brugerId: string; delt: boolean }
   | { ok: false; status: number; fejl: string };
 
 /**
@@ -22,5 +22,5 @@ export async function kraevSliber(): Promise<Adgang> {
     return { ok: false, status: 403, fejl: "Kontoen kan ikke slibe." };
   }
 
-  return { ok: true, brugerId: session.user.brugerId };
+  return { ok: true, brugerId: session.user.brugerId, delt: session.user.delt };
 }

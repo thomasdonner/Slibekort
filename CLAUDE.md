@@ -1074,7 +1074,7 @@ To forskellige årsager, fundet i den rækkefølge de blev rettet:
   overspring, målt i pixels, uanset om `text-wrap: normal` eller
   `text-wrap: balance` blev brugt, hvilket viste at årsagen ikke var
   linjedelingsstrategien, men selve det hårde mellemrum.
-- **Rettet med `tilOmbrydeligtNavn`** (`app/slib/page.tsx`) — erstatter
+- **Rettet med `tilOmbrydeligtNavn`** (`app/slib/slib-klient.tsx`) — erstatter
   U+00A0 med et almindeligt mellemrum, men kun i selve visningen på dette
   kort, ikke i databasens `spillere.navn`. Navnet kan stadig have brug
   for det hårde mellemrum andre steder (fx en trykt rapport eller en
@@ -1088,3 +1088,62 @@ To forskellige årsager, fundet i den rækkefølge de blev rettet:
   et pænere linjeskift — den løste ikke det underliggende problem (det
   hårde mellemrum), og almindelig ombrækning var lige så korrekt, bare
   kedeligere.
+
+## Beslutninger undervejs — delt konto til iPad'en i sliberummet
+
+Ønske: en dedikeret konto til iPad'en i sliberummet (se punktet ovenfor om
+selve hjemmeskærm-ikonet). Når den konto bruges, skal sliberen kunne
+indtaste sit eget navn ved hver slibning, så historikken viser hvem der
+reelt udførte den — ikke bare "iPad'en".
+
+- **`Bruger.delt: Boolean`**, ikke en ny rolle — en delt konto kan sagtens
+  også have rollen `sliber` som enhver anden, `delt` er en selvstændig
+  egenskab ved selve kontoen, ikke ved adgangen. Sat via en ny
+  afkrydsningsboks i "Giv eller ret adgang" på `/overblik/adgang`
+  (administrator-only, samme sted som roller og hold sættes).
+- **`Bevaegelse.udfoertAfNavn: String?`**, adskilt fra `udfoertAfId`.
+  `udfoertAfId` peger stadig korrekt på den delte konto (hvilken
+  *credential* der blev brugt) — `udfoertAfNavn` er sliberens eget
+  fritekstfelt, det menneske der rent faktisk trykkede. To forskellige
+  ting, ikke det samme felt genbrugt. Historikken
+  (`app/overblik/spillere/[id]/page.tsx`) viser `udfoertAfNavn`, når den
+  er sat, ellers uændret `udfoertAf?.navn` eller "Automatisk (MobilePay)".
+- **Feltet er påkrævet, ikke valgfrit, når kontoen er delt** — både i
+  UI'et (`Bekraeftelsesskaerm` i `app/slib/slib-klient.tsx`, viser en
+  fejl og blokerer "Træk", indtil navnet er udfyldt) og server-side
+  (`/api/slib/traek` og `/api/slib/fortryd` afviser med 400, hvis kontoen
+  er delt og `udfoertAfNavn` mangler eller er tomt) — hele pointen med
+  feltet forsvinder, hvis det kan stå tomt.
+- **Husket i browserens `localStorage` i én time, efter udtrykkeligt
+  ønske** (`lib/klient/husket-navn.ts`, `HUSK_UDFOERT_AF_NAVN_MINUTTER`
+  i `lib/delt-konto.ts`) — sliberen skal normalt bare bekræfte navnet, ikke
+  skrive det igen for hver spiller i løbet af en vagt, men et gammelt navn
+  skal ikke blive stående uendeligt, hvis en anden overtager iPad'en uden
+  at tænke over det. Tilfældigvis samme antal minutter som
+  `SPAERRETID_MINUTTER` i `lib/slibning.ts` — en selvstændig beslutning,
+  ikke den samme regel genbrugt; de to konstanter kan ændres uafhængigt af
+  hinanden. Rent klient-lager, serveren ved ikke noget om det — udløber
+  ved at gemme et tidspunkt sammen med navnet og tjekke om det stadig er
+  frisk (`erHusketNavnFrisk`, en ren, testet funktion), ikke ved en aktiv
+  sletning.
+- **Sat på selve slibningen, ikke som en løbende "hvem er logget ind
+  lige nu"-tilstand** — hvert kald til `/api/slib/traek`/`/api/slib/fortryd`
+  bærer sit eget `udfoertAfNavn`, og en fortrydelse genbruger automatisk
+  det navn, den oprindelige slibning blev lavet med (gemt i selve
+  `kvittering`-skærmens tilstand), uden at spørge igen — det er samme
+  handling, kun 10 sekunder senere.
+- **Går gennem den samme offline-kø som resten af `/slib`** — `KoePost`
+  (`lib/klient/db.ts`) har fået et ekstra, valgfrit felt, så et navn
+  ikke går tabt, hvis en slibning laves uden forbindelse og først når
+  frem til serveren senere.
+- **`app/slib/page.tsx` er splittet i en tynd server-komponent og en ny
+  `slib-klient.tsx`** — den eneste grund til at kende `delt` er at hente
+  den fra sessionen via `auth()`, som kræver en server-komponent; resten
+  af siden (kamera, offline-kø, al tilstand) skal stadig være en
+  klient-komponent. `lib/kraev-sliber.ts` returnerer nu også `delt`, så
+  API-ruterne ikke skal lave et ekstra opslag ud over det, `kraevSliber`
+  allerede laver.
+- **`/afprov-som` har fået en fjerde sliber-knap**, "Sliber (delt konto,
+  fx en iPad)" (`afprovDeltSliber` i `app/afprov-som/actions.ts`) — uden
+  den ville den delte konto slet ikke kunne afprøves lokalt uden en rigtig
+  administrator-oprettet konto først.

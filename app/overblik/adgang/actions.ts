@@ -33,6 +33,9 @@ export async function giveAdgang(formData: FormData) {
   const hold = holdTekst
     ? holdTekst.split(",").map((h) => h.trim()).filter(Boolean)
     : [];
+  // "Delt konto" — fx en iPad der står fast i sliberummet, brugt af
+  // skiftende slibere. Se CLAUDE.md og lib/delt-konto.ts.
+  const delt = formData.get("delt") === "on";
 
   if (!email.includes("@")) {
     throw new Error("Skriv en gyldig mailadresse.");
@@ -49,8 +52,8 @@ export async function giveAdgang(formData: FormData) {
 
   const bruger = await prisma.bruger.upsert({
     where: { userId: user.id },
-    create: { userId: user.id, navn, roller, aktiv: true },
-    update: { navn, roller, aktiv: true },
+    create: { userId: user.id, navn, roller, aktiv: true, delt },
+    update: { navn, roller, aktiv: true, delt },
   });
 
   // Erstatter hold-adgangen helt frem for at lægge til — det gør formen

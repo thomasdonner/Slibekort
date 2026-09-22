@@ -2,7 +2,12 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { erUdviklingsmiljoe } from "@/lib/udviklingsmiljoe";
 import { ENGANGSSLIBNING_HOLD } from "@/lib/spillere/engangsslibning";
-import { afprovAlleRoller, afprovHoldleder, afprovRolle } from "./actions";
+import {
+  afprovAlleRoller,
+  afprovDeltSliber,
+  afprovHoldleder,
+  afprovRolle,
+} from "./actions";
 
 export default async function AfprovSomSide() {
   // Dobbelt spærring: siden er allerede ikke linket fra noget menu, men
@@ -43,6 +48,9 @@ export default async function AfprovSomSide() {
         </form>
         <form action={afprovRolle.bind(null, "administrator")}>
           <button type="submit">Administrator</button>
+        </form>
+        <form action={afprovDeltSliber}>
+          <button type="submit">Sliber (delt konto, fx en iPad)</button>
         </form>
       </section>
 

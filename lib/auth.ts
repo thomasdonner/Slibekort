@@ -54,6 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           brugerId: bruger?.id ?? null,
           roller: (bruger?.roller ?? []) as Rolle[],
           aktiv: bruger?.aktiv ?? false,
+          delt: bruger?.delt ?? false,
         },
       };
     },

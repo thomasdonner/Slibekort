@@ -23,6 +23,10 @@ export type KoePost = {
   tvangstraek?: boolean;
   oprindeligBevaegelseId?: string;
   oprettet: string;
+  // Kun sat når kontoen er delt (lib/delt-konto.ts) — sliberens eget navn,
+  // lagt i køen sammen med resten, så det ikke går tabt ved en forsinket
+  // offline-afsendelse.
+  udfoertAfNavn?: string;
 };
 
 function aabnDb(): Promise<IDBDatabase> {

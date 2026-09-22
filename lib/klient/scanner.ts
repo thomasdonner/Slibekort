@@ -118,6 +118,7 @@ export async function traekSlibning(params: {
   qrToken: string;
   spillerId: string;
   tvangstraek: boolean;
+  udfoertAfNavn?: string;
 }): Promise<{ klientId: string; saldo: number }> {
   const klientId = crypto.randomUUID();
 
@@ -128,6 +129,7 @@ export async function traekSlibning(params: {
     spillerId: params.spillerId,
     antalEffekt: -1,
     tvangstraek: params.tvangstraek,
+    udfoertAfNavn: params.udfoertAfNavn,
     oprettet: new Date().toISOString(),
   });
 
@@ -153,6 +155,7 @@ export async function fortrydSlibning(params: {
   spillerId: string;
   oprindeligKlientId: string;
   oprindeligBevaegelseId: string | null;
+  udfoertAfNavn?: string;
 }): Promise<{ saldo: number }> {
   if (!params.oprindeligBevaegelseId) {
     await sletKoePost(params.oprindeligKlientId);
@@ -174,6 +177,7 @@ export async function fortrydSlibning(params: {
     spillerId: params.spillerId,
     antalEffekt: 1,
     oprindeligBevaegelseId: params.oprindeligBevaegelseId,
+    udfoertAfNavn: params.udfoertAfNavn,
     oprettet: new Date().toISOString(),
   });
 
@@ -258,6 +262,7 @@ async function sendKoePost(post: KoePost): Promise<SendSvar> {
         spillerId: post.spillerId,
         klientId: post.klientId,
         tvangstraek: post.tvangstraek ?? false,
+        udfoertAfNavn: post.udfoertAfNavn,
       }),
     });
     if (!res.ok) throw new Error("traek fejlede");
@@ -272,6 +277,7 @@ async function sendKoePost(post: KoePost): Promise<SendSvar> {
       bevaegelseId: post.oprindeligBevaegelseId,
       klientId: post.klientId,
       besluttetTidspunkt: post.oprettet,
+      udfoertAfNavn: post.udfoertAfNavn,
     }),
   });
   if (res.status === 409) return "mislykkedes_endeligt";

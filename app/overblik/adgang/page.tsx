@@ -60,6 +60,13 @@ export default async function AdgangSide() {
             Hold (kun for holdleder, kommasepareret)
             <input name="hold" placeholder="U14, U16" />
           </label>
+          <fieldset>
+            <legend>Delt konto</legend>
+            <label>
+              <input type="checkbox" name="delt" /> Delt konto (fx en iPad,
+              der står fast i sliberummet, brugt af skiftende slibere)
+            </label>
+          </fieldset>
           <button type="submit">Gem adgang</button>
         </form>
       </section>
@@ -73,6 +80,7 @@ export default async function AdgangSide() {
               <th>E-mail</th>
               <th>Roller</th>
               <th>Hold</th>
+              <th>Delt konto</th>
               <th>Status</th>
               <th>Enheder logget ind</th>
               <th></th>
@@ -85,6 +93,7 @@ export default async function AdgangSide() {
                 <td>{b.user.email}</td>
                 <td>{b.roller.join(", ")}</td>
                 <td>{b.holdAdgang.map((h) => h.hold).join(", ")}</td>
+                <td>{b.delt ? "Ja" : ""}</td>
                 <td>{b.aktiv ? "Aktiv" : "Spærret"}</td>
                 <td>{sessionKort.get(b.userId) ?? 0}</td>
                 <td>
