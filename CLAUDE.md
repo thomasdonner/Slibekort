@@ -942,3 +942,49 @@ i html-tøj — ingen farver, ingen visuel identitet, kun `<p>`- og
   skabeloner sendt til et rigtigt postkasse via Resend under udviklingen,
   inklusive to-børns-udgaven af advarsel/rykker, for at se den tynde linje
   mellem søskende gøre sin nytte.
+
+## Beslutninger undervejs — "Vælg spiller" på `/slib`
+
+Ønske: en fast opstillet iPad i sliberummet, hvor sliberen er logget ind
+med sit eget sliber-login og vælger hold og spiller ved at klikke, i
+stedet for at scanne — nyttigt netop der, hvor telefonen ikke behøver
+holdes op mod en skøjtepose.
+
+- **Genbruger hele resten af `/slib` uændret, kun en ny vej ind.** Både
+  QR-scanning og manuel token-indtastning endte i forvejen i samme
+  `slaOp(qrToken)` (`app/slib/page.tsx`), som selv kalder
+  `hentSpillerTilBekraeftelse` (`lib/klient/scanner.ts`) og viser den
+  samme bekræftelses- og kvitteringsskærm. "Vælg spiller" er blot en
+  tredje vej til det samme kald: de nye API-ruter
+  (`app/api/slib/hold`, `app/api/slib/spillere`) returnerer spillerens
+  `qrToken`, ikke kun et id, netop så det eksisterende flow (spærretid,
+  "Træk alligevel", 10-sekunders fortryd, offline-kø) er helt uændret,
+  uanset hvilken fane spilleren blev fundet fra.
+- **To faner øverst på siden** ("Scan QR-kode" / "Vælg spiller"), ikke en
+  erstatning af scanneren — en sliber på egen telefon scanner stadig,
+  iPad'en i sliberummet kan bruge den nye fane. Vises kun i selve
+  scanner-tilstanden, ikke oven på bekræftelses- eller kvitteringsskærmen.
+- **Bekræft-trin bevaret, efter udtrykkeligt ønske**: et klik på en
+  spiller i listen lander på den samme bekræftelsesskærm som en scanning
+  ville, ikke et træk med det samme — en delt iPad med en scrollet liste
+  har større risiko for et fejlklik end en scannet kode.
+- **Kun online for nu, efter udtrykkeligt ønske.** I modsætning til en
+  QR-scannet spiller (som caches i IndexedDB og virker offline) kræver
+  hold- og spillerlisten forbindelse — accepteret som en bevidst
+  begrænsning af v1, ikke en fejl. QR-sporet er upåvirket og virker
+  offline som hidtil. Skal det tilføjes senere, er mønsteret allerede der
+  i `lib/klient/db.ts`.
+- **Sliberen ser alle hold, ikke kun egne** — `kraevSliber` afgrænser
+  ikke på hold (i modsætning til holdlederens `adgang.hold`), så
+  hold-listen i `/api/slib/hold` er alle aktive hold.
+- **Engangsslibning udelades fra hold-listen**, samme filter
+  (`hold: { not: ENGANGSSLIBNING_HOLD }`) som alle andre hold-baserede
+  lister i systemet (`/overblik`, `/overblik/qr-ark`, saldorapporten,
+  `/afprov-som`) allerede bruger — den slibes stadig ved at scanne dens
+  egen printede kode i "Scan QR-kode", ikke ved at vælges fra en liste af
+  rigtige hold.
+- **Spillerlisten viser saldo ved siden af hvert navn** (samme
+  `saldoKlasse`-farvekodning som resten af appen), så sliberen kan se en
+  lav saldo, mens de alligevel kigger på listen — ingen ekstra
+  databaseforespørgsel, saldoen var allerede med i samme opslag som
+  navn og qrToken.

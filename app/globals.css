@@ -745,3 +745,76 @@ th {
   font-weight: 600;
   font-size: 0.95rem;
 }
+
+/* Fanerne øverst på /slib ("Scan QR-kode" / "Vælg spiller") — samme
+   pille-stil som .hold-vaelger, men på <button> i stedet for <a>, da der
+   ikke er noget URL at navigere til, kun en lokal visningstilstand. */
+.slib-faner {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.slib-faner button {
+  background: var(--flade);
+  color: var(--tekst);
+  border: 1px solid var(--kant);
+  border-radius: 999px;
+  font-weight: 500;
+  box-shadow: none;
+}
+
+.slib-faner button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  filter: none;
+  box-shadow: none;
+  transform: none;
+}
+
+.slib-faner button[aria-selected="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-tekst);
+}
+
+/* Spillerlisten i "Vælg spiller"-fanen — store, fuldbredde rækker, ikke en
+   almindelig <ul> med tekstlinjer. Sliberen bruger den ofte fra en iPad i
+   sliberummet, så tryk-målet skal være stort og tydeligt, ligesom
+   .rapport-kort er det for hold-listen i overblikket. */
+.spiller-vaelg-liste {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.spiller-vaelg-raekke {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.1rem;
+  background: var(--flade);
+  color: var(--tekst);
+  border: 1px solid var(--kant);
+  border-radius: var(--radius-lille);
+  box-shadow: var(--skygge);
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.spiller-vaelg-raekke:hover {
+  border-color: var(--accent);
+  box-shadow: var(--skygge-flydende);
+  filter: none;
+  transform: none;
+}
+
+.spiller-vaelg-raekke .tal {
+  font-size: 1.1rem;
+}

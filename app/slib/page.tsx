@@ -25,8 +25,11 @@ type Skaerm =
     }
   | { navn: "fejl"; besked: string };
 
+type Fane = "scan" | "vaelg";
+
 export default function SlibSide() {
   const [skaerm, setSkaerm] = useState<Skaerm>({ navn: "scanner" });
+  const [fane, setFane] = useState<Fane>("scan");
   const [manueltToken, setManueltToken] = useState("");
   // Starter som false, samme som på serveren (der har intet "window"), og
   // rettes først i en effekt efter mount. En lazy useState-initializer så
@@ -119,12 +122,36 @@ export default function SlibSide() {
     <main>
       <h1>Slibekort</h1>
       {skaerm.navn === "scanner" && (
-        <Scanner
-          understoetterKamera={understoetterKamera}
-          manueltToken={manueltToken}
-          onManueltTokenAendret={setManueltToken}
-          onScan={slaOp}
-        />
+        <>
+          <div className="slib-faner" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={fane === "scan"}
+              onClick={() => setFane("scan")}
+            >
+              Scan QR-kode
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={fane === "vaelg"}
+              onClick={() => setFane("vaelg")}
+            >
+              Vælg spiller
+            </button>
+          </div>
+          {fane === "scan" ? (
+            <Scanner
+              understoetterKamera={understoetterKamera}
+              manueltToken={manueltToken}
+              onManueltTokenAendret={setManueltToken}
+              onScan={slaOp}
+            />
+          ) : (
+            <VaelgSpiller onValgt={slaOp} />
+          )}
+        </>
       )}
       {skaerm.navn === "bekraeft" && (
         <Bekraeftelsesskaerm
@@ -248,6 +275,103 @@ function Scanner({
         />
         <button type="submit">Slå op</button>
       </form>
+    </div>
+  );
+}
+
+type SpillerRaekke = { spillerId: string; qrToken: string; navn: string; saldo: number };
+
+// Alternativet til at scanne: hold vælges først, så spillerne på det hold.
+// Et klik på en spiller kalder onValgt(qrToken) — samme qrToken som en
+// rigtig scanning ville have givet, så resten af siden (bekræftelse,
+// spærretid, kvittering, fortryd) er helt uændret, uanset hvilken fane
+// spilleren blev fundet fra.
+function VaelgSpiller({ onValgt }: { onValgt: (qrToken: string) => void }) {
+  const [hold, setHold] = useState<string[] | null>(null);
+  const [valgtHold, setValgtHold] = useState<string | null>(null);
+  // Holder styr på hvilket hold svaret hører til, ikke kun selve
+  // spillerne — ellers ville et skift til et andet hold kortvarigt vise
+  // det forrige holds spillere, indtil det nye svar når frem.
+  const [spillereState, setSpillereState] = useState<{
+    hold: string;
+    raekker: SpillerRaekke[];
+  } | null>(null);
+  const [fejl, setFejl] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/slib/hold")
+      .then((res) => res.json())
+      .then((data) => setHold(data.hold ?? []))
+      .catch(() => setFejl("Kunne ikke hente hold. Tjek forbindelsen."));
+  }, []);
+
+  useEffect(() => {
+    if (!valgtHold) return;
+    fetch(`/api/slib/spillere?hold=${encodeURIComponent(valgtHold)}`)
+      .then((res) => res.json())
+      .then((data) => setSpillereState({ hold: valgtHold, raekker: data.spillere ?? [] }))
+      .catch(() => setFejl("Kunne ikke hente spillere. Tjek forbindelsen."));
+  }, [valgtHold]);
+
+  const spillere =
+    valgtHold && spillereState?.hold === valgtHold ? spillereState.raekker : null;
+
+  if (fejl) {
+    return (
+      <p role="alert">
+        <IkonAdvarsel />
+        <span>{fejl}</span>
+      </p>
+    );
+  }
+
+  if (hold === null) {
+    return <p>Henter hold...</p>;
+  }
+
+  if (hold.length === 0) {
+    return <p>Ingen hold at vælge imellem endnu.</p>;
+  }
+
+  return (
+    <div>
+      <nav className="hold-vaelger">
+        {hold.map((h) => (
+          <a
+            key={h}
+            href="#"
+            className={h === valgtHold ? "aktiv" : undefined}
+            onClick={(event) => {
+              event.preventDefault();
+              setValgtHold(h);
+            }}
+          >
+            {h}
+          </a>
+        ))}
+      </nav>
+
+      {valgtHold &&
+        (spillere === null ? (
+          <p>Henter spillere...</p>
+        ) : spillere.length === 0 ? (
+          <p>Ingen spillere på {valgtHold}.</p>
+        ) : (
+          <ul className="spiller-vaelg-liste">
+            {spillere.map((s) => (
+              <li key={s.spillerId}>
+                <button
+                  type="button"
+                  className="spiller-vaelg-raekke"
+                  onClick={() => onValgt(s.qrToken)}
+                >
+                  <span>{s.navn}</span>
+                  <span className={`tal ${saldoKlasse(s.saldo)}`}>{s.saldo}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ))}
     </div>
   );
 }
