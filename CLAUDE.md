@@ -1013,3 +1013,34 @@ scanne visuelt på en iPad med 20+ spillere på ét hold.
   5 kort pr. række inden for `main`s `max-width: 760px` — bredt nok til
   et solidt tryk-mål pr. kort, tæt nok til at et helt hold kan overskues
   uden at scrolle alt for meget på en iPad.
+
+## Beslutninger undervejs — dæmpet lyst tema
+
+Ønske: "hele designet mere mørkt". Tre retninger blev vist direkte i
+appen (samme `/overblik`-side, tre farvesæt), for at vælge ud fra det
+rigtige indhold i stedet for isolerede farveprøver:
+
+1. Uændret lyst tema (næsten hvidt, som før).
+2. Det eksisterende mørke tema (`@media (prefers-color-scheme: dark)`,
+   se punktet om "mere moderne, mere spændende") gjort til standarden for
+   alle, uanset enhedens egen indstilling.
+3. Det lyse tema bevaret (mørk tekst på lys bund, samme letlæselighed for
+   tal som hidtil), men med en varmere, mørkere baggrund end næsten-hvidt.
+
+**Valget faldt på nr. 3** — stadig det lyse tema, ikke det mørke gjort
+permanent.
+
+- **Kun `--baggrund`, `--flade`, `--kant` og skyggernes styrke er
+  ændret** (`:root` i `app/globals.css`) — `--baggrund` fra `#f4f4f5` til
+  `#d9d7d3`, `--flade` fra `#ffffff` til `#f1efec`, `--kant` tilsvarende
+  mørkere, og `--skygge`/`--skygge-flydende` en anelse kraftigere, så kort
+  stadig løfter sig tydeligt fra den nu mørkere baggrund. Alle andre
+  farver (accent, sund, advarsel, fare, tekst) er uændrede.
+- **`@media (prefers-color-scheme: dark)`-blokken er upåvirket** — en
+  enhed sat til mørk tilstand ser stadig det oprindelige, mørke tema,
+  ikke en mørkere udgave af det dæmpede lyse. De to temaer er stadig
+  reelt to forskellige farvesæt, ikke ét tema med to styrker.
+- **Ingen ny variabel eller nyt klassenavn** — alt andet i `globals.css`
+  refererer allerede udelukkende til `--baggrund`/`--flade`/`--kant`
+  (ingen hårdkodede hvide baggrunde noget sted), så ændringen slår
+  automatisk igennem alle sider uden andre rettelser.

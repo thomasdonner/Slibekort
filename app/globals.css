@@ -1,10 +1,14 @@
-/* Farver taget fra aaik.dk (rød CTA-farve, sort menulinje) — se CLAUDE.md. */
+/* Farver taget fra aaik.dk (rød CTA-farve, sort menulinje) — se CLAUDE.md.
+   --baggrund/--flade er sidenhen dæmpet (mindre skarpt hvidt, en varmere
+   mørkegrå baggrund) efter ønske om et "mere mørkt" udtryk — stadig det
+   lyse tema (mørk tekst på lys bund), bare mindre blændende at kigge på i
+   lang tid, fx i sliberummet eller kassererens overblik. */
 :root {
-  --baggrund: #f4f4f5;
-  --flade: #ffffff;
+  --baggrund: #d9d7d3;
+  --flade: #f1efec;
   --tekst: #1c1b1b;
   --tekst-svag: #6b6b6b;
-  --kant: #e6e6e7;
+  --kant: #c9c6c0;
   --sort: #0a0a0a;
   --sort-tekst: #ffffff;
   --accent: #dd2f2f;
@@ -16,8 +20,8 @@
   --sund-lys: #e8f5ee;
   --advarsel: #9a6b00;
   --advarsel-lys: #fbf1d9;
-  --skygge: 0 1px 2px rgba(15, 15, 15, 0.04), 0 8px 24px -10px rgba(15, 15, 15, 0.12);
-  --skygge-flydende: 0 4px 10px rgba(15, 15, 15, 0.06), 0 16px 32px -12px rgba(15, 15, 15, 0.18);
+  --skygge: 0 1px 2px rgba(15, 15, 15, 0.08), 0 8px 24px -10px rgba(15, 15, 15, 0.22);
+  --skygge-flydende: 0 4px 10px rgba(15, 15, 15, 0.08), 0 16px 32px -12px rgba(15, 15, 15, 0.22);
   --accent-gloed: rgba(221, 47, 47, 0.32);
   --radius: 14px;
   --radius-lille: 10px;
