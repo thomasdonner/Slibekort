@@ -824,10 +824,12 @@ th {
   transform: translateY(-2px);
 }
 
-/* Cirklen med spillerens initialer — farven er den samme saldoKlasse som
+/* Cirklen bag klublogoet — baggrundsfarven er den samme saldoKlasse som
    resten af appen bruger til selve saldotallet (lib/ui/saldo-klasse.ts),
    så en rød eller gul cirkel betyder det samme her som andre steder,
-   ikke en ny, uafhængig farveskala. */
+   ikke en ny, uafhængig farveskala. Logoet selv har sin egen faste røde
+   farve (public/aaik-logo.svg, ikke currentColor), så det er kun
+   baggrunden, ikke logoet, der skifter farve efter saldo. */
 .spiller-vaelg-avatar {
   display: flex;
   align-items: center;
@@ -835,24 +837,24 @@ th {
   width: 54px;
   height: 54px;
   border-radius: 999px;
-  font-size: 1.15rem;
-  font-weight: 700;
   flex-shrink: 0;
+}
+
+.spiller-vaelg-avatar img {
+  width: 26px;
+  height: 26px;
 }
 
 .spiller-vaelg-avatar-sund {
   background: var(--sund-lys);
-  color: var(--sund);
 }
 
 .spiller-vaelg-avatar-advarsel {
   background: var(--advarsel-lys);
-  color: var(--advarsel);
 }
 
 .spiller-vaelg-avatar-kritisk {
   background: var(--fare-lys);
-  color: var(--fare);
 }
 
 .spiller-vaelg-navn {

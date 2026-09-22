@@ -994,14 +994,19 @@ udtryk** — den oprindelige udgave var en smal, fuldbredde liste af
 tekstrækker (én spiller pr. linje), som virkede kedelig og lidt tung at
 scanne visuelt på en iPad med 20+ spillere på ét hold.
 
-- **Hvert kort har en farvet cirkel med spillerens initialer**
-  (`spillerInitialer` i `app/slib/page.tsx`), samme idé som
-  `.rapport-kort`s ikon-cirkel og `.kvittering-ikon` — men cirklens farve
-  er ikke tilfældig pynt: den er `saldoKlasse(saldo)` (samme funktion som
-  farver selve saldotallet), så en rød cirkel betyder det samme som et
-  rødt tal andre steder i appen. `avatarKlasse` oversætter blot
-  `"tal-sund"` til `"spiller-vaelg-avatar-sund"` — ingen ny,
-  uafhængig tærskel-logik at holde synkron med den oprindelige.
+- **Hvert kort har en farvet cirkel** — oprindeligt spillerens initialer
+  (`spillerInitialer`), sidenhen erstattet med klublogoet
+  (`public/aaik-logo.svg`, samme fil som topbjælken), efter ønske om
+  genkendelighed frem for et bogstav-ikon. Cirklens *baggrund* er ikke
+  tilfældig pynt: den er `saldoKlasse(saldo)` (samme funktion som farver
+  selve saldotallet), så en rød cirkel betyder det samme som et rødt tal
+  andre steder i appen. `avatarKlasse` oversætter blot `"tal-sund"` til
+  `"spiller-vaelg-avatar-sund"` — ingen ny, uafhængig tærskel-logik at
+  holde synkron med den oprindelige. Logoet selv har sin egen faste røde
+  farve i selve SVG'en (ikke `currentColor`), så det er kun baggrunden,
+  ikke logoet, der skifter med saldo — og alle kort viser derfor samme
+  ikon; det er navnet under cirklen, ikke cirklen selv, der adskiller
+  spillerne fra hinanden.
 - **Ny CSS-variabel, `--advarsel`/`--advarsel-lys`** (lys og mørk
   udgave, `app/globals.css`), sat op parallelt med det eksisterende
   `--sund`/`--fare`-par — den manglede, fordi saldo-tilstanden "1 tilbage"
