@@ -1271,3 +1271,34 @@ findes en service worker eller en cache.
   netværk-først for sider er det ikke længere nødvendigt at ændre
   cache-navnet ved hver udgivelse for at undgå denne fejl; den gamle
   cache bliver bare aldrig læst for en side, man har forbindelse til.
+
+## Beslutninger undervejs — hjemmeskærm-ikonet og login hænger ikke sammen på iOS
+
+Fundet ved den samme rigtige sliber-telefon: efter at have logget ind via
+det magiske link i Safari, viste hjemmeskærm-ikonet (se "Beslutninger
+undervejs — installerbar app") stadig login-siden, som om intet var sket.
+
+**Dette er en grænse sat af selve iOS, ikke en fejl i koden — bekræftet
+mod ekstern dokumentation af iOS' PWA-understøttelse, ikke gættet.** Et
+"Føj til hjemmeskærm"-ikon (standalone-tilstand) kører i sin egen,
+isolerede lagerplads, adskilt fra almindelig Safari — cookies (herunder
+login-sessionen) deles ikke mellem de to. Mail-appen åbner altid et link i
+almindelig Safari, uanset om der findes et hjemmeskærm-ikon for samme
+side — sessionen bliver derfor sat i Safaris lagerplads, som ikonet aldrig
+ser. Der findes ingen ren, usynlig løsning på iOS for et magisk
+mail-link; det ville kræve enten en anden login-mekanik (fx en kode
+sliberen selv indtaster, i stedet for et link man trykker) eller en
+teknisk omvej (kopiér linket fra Safari, indsæt det i et felt inde i
+selve ikonet) — begge dele en større ændring, ikke valgt her.
+
+- **Løsningen, efter udtrykkeligt ønske: brug almindelig Safari, ikke
+  hjemmeskærm-ikonet, som sliberens daglige indgang.** Det opfylder
+  stadig det egentlige krav ("telefonen forbliver logget ind i et år") —
+  det er kun *i Safari*, ikke via ikonets separate lagerplads. Ingen
+  kodeændring nødvendig; selve login-sessionens levetid
+  (`SESSION_MAX_AGE_SEKUNDER` i `lib/auth.ts`) gælder uændret for en
+  normal Safari-fane.
+- **Selve den installerbare app-funktion (manifest, apple-touch-icon,
+  fuldskærm) er ikke fjernet** — den er harmløs for enhver, der ikke er
+  afhængig af den til login-persistens, og kan stadig bruges af nogen,
+  der ikke er generet af at skulle logge ind igen en gang imellem.
