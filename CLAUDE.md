@@ -172,11 +172,10 @@ dokumentation.
   kun besøgte sider (stale-while-revalidate), så scanneren kan åbnes igen
   uden forbindelse. Selve slibningerne går gennem en IndexedDB-kø i
   `lib/klient/`, ikke gennem service workerens cache.
-- **QR-scanning bruger browserens indbyggede `BarcodeDetector`**, ikke et
-  npm-bibliotek. Virker i Chrome/Edge/Android; på telefoner uden support
-  (bl.a. ældre iOS Safari) falder scannersiden tilbage til manuel
-  indtastning af koden. Skift til et bibliotek, hvis det i praksis er et
-  problem på de telefoner, sliberne rent faktisk bruger.
+- **QR-scanning brugte oprindeligt browserens indbyggede `BarcodeDetector`**,
+  ikke et npm-bibliotek — men det problem, punktet herunder advarede om,
+  viste sig i praksis. Se "Beslutninger undervejs — kamera-QR-scanning
+  virker ikke i Safari" for hvad den blev erstattet med.
 - **Xlsx læses med `read-excel-file`, ikke `xlsx` (SheetJS) eller
   `exceljs`.** SheetJS' seneste rettede version distribueres ikke længere
   via npm; den npm-udgivne 0.18.5 har kendte sårbarheder. `exceljs` er fin,
@@ -1209,3 +1208,35 @@ fandt to rigtige fejl, ingen af dem synlige i lokal udvikling:
   var som administrator, der allerede havde vænnet sig til at klikke
   logoet manuelt) — kun en sliber, der prøvede det rigtige link for
   første gang på sin egen telefon, afslørede det.
+
+## Beslutninger undervejs — kamera-QR-scanning virker ikke i Safari
+
+Fejl, fundet ved den samme rigtige sliber-telefon (en iPhone): tryk på
+"Scan QR-kode" gjorde ingenting synligt — fanen var allerede den valgte
+standard, og siden faldt korrekt, men usynligt for sliberen, tilbage til
+den forklarende tekst og den manuelle indtastning. Årsagen var netop den,
+det oprindelige punkt om `BarcodeDetector` advarede om: Safari på iOS
+understøtter ikke `BarcodeDetector`-API'et, kun Chrome/Edge/Android gør.
+
+- **Erstattet med `jsqr`**, ikke `BarcodeDetector`. Samme afvejning som
+  `qrcode-generator` i punkt 7: ingen egne underafhængigheder, gør kun
+  én ting (læser en QR-kode fra et billede), og virker i alle browsere
+  der har `getUserMedia` — hvilket Safari på iOS faktisk har, det var
+  kun selve stregkode-aflæsningen der manglede.
+- **Kameraadgangen (`getUserMedia`) er helt uændret** — det var aldrig
+  problemet. Det eneste, der er skiftet ud, er *aflæsningen* af hvert
+  kameraframe: i stedet for `BarcodeDetector.detect(videoElement)` direkte
+  på videoelementet, tegnes frame'et nu på et skjult `<canvas>`
+  (`app/slib/slib-klient.tsx`), og `jsQR` læser koden fra canvas'ets
+  pixel-data. Resten af siden (bekræftelse, spærretid, kvittering,
+  fortryd, offline-kø) er fuldstændig uberørt — de tager stadig bare
+  imod en tekststreng fra `onScan`, uanset hvor den kommer fra.
+- **Det gamle `understoetterKamera`-tjek (og dets
+  hydration-workaround, se "Første rigtige test" ovenfor) er fjernet
+  helt**, ikke kun rettet — det gættede forkert på forhånd, om kameraet
+  ville virke, ud fra en enkelt API's tilstedeværelse. Nu forsøges
+  kameraet altid optimistisk, og fejlteksten ("Denne telefon giver ikke
+  adgang til kameraet...") vises kun, hvis `getUserMedia` rent faktisk
+  fejler (afvist tilladelse, intet kamera, en for gammel browser) — en
+  mere korrekt fejltilstand end at gætte ud fra browserens navn/API'er,
+  og samtidig mindre kode, ikke mere.

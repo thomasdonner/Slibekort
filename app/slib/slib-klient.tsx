@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import jsQR from "jsqr";
 import {
   fortrydSlibning,
   hentSpillerTilBekraeftelse,
@@ -39,18 +40,6 @@ export default function SlibKlient({ delt }: { delt: boolean }) {
   // Kun relevant når delt er sandt — se Bekraeftelsesskaerm.
   const [udfoertAfNavn, setUdfoertAfNavn] = useState("");
   const [navnFejl, setNavnFejl] = useState<string | null>(null);
-  // Starter som false, samme som på serveren (der har intet "window"), og
-  // rettes først i en effekt efter mount. En lazy useState-initializer så
-  // ud til at løse det samme (ingen selvstændig effekt), men gav i praksis
-  // et hydration-mismatch, fordi serveren og klienten reelt regner ud til
-  // to forskellige værdier — det er præcis den situation, denne kendte
-  // undtagelse fra "ingen setState i en effekt" er lavet til.
-  const [understoetterKamera, setUnderstoetterKamera] = useState(false);
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setUnderstoetterKamera("BarcodeDetector" in window);
-  }, []);
-
   useEffect(() => {
     void synkroniserKoe();
     const paaOnline = () => void synkroniserKoe();
@@ -172,7 +161,6 @@ export default function SlibKlient({ delt }: { delt: boolean }) {
           </div>
           {fane === "scan" ? (
             <Scanner
-              understoetterKamera={understoetterKamera}
               manueltToken={manueltToken}
               onManueltTokenAendret={setManueltToken}
               onScan={slaOp}
@@ -220,21 +208,26 @@ export default function SlibKlient({ delt }: { delt: boolean }) {
 }
 
 function Scanner({
-  understoetterKamera,
   manueltToken,
   onManueltTokenAendret,
   onScan,
 }: {
-  understoetterKamera: boolean;
   manueltToken: string;
   onManueltTokenAendret: (vaerdi: string) => void;
   onScan: (token: string) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Starter optimistisk — kameraet antages at virke, indtil det rent
+  // faktisk fejler (afvist tilladelse, intet kamera, gammel browser uden
+  // getUserMedia). Ingen forhåndsgæt på browserstøtte som tidligere (se
+  // "Beslutninger undervejs — kamera-QR-scanning virker ikke i Safari"),
+  // kun det der faktisk sker, når vi prøver — derfor intet
+  // hydration-problem at tage højde for her, i modsætning til det gamle
+  // BarcodeDetector-tjek.
+  const [kameraFejlede, setKameraFejlede] = useState(false);
 
   useEffect(() => {
-    if (!understoetterKamera) return;
-
     let annulleret = false;
     let harScannet = false;
     let stream: MediaStream | null = null;
@@ -247,30 +240,30 @@ function Scanner({
         stream.getTracks().forEach((spor) => spor.stop());
         return;
       }
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      if (!video || !canvas) return;
+      video.srcObject = stream;
+      await video.play();
 
-      // BarcodeDetector mangler stadig i TypeScripts indbyggede DOM-typer.
-      const BarcodeDetectorKlasse = (
-        window as unknown as { BarcodeDetector: new (init: { formats: string[] }) => {
-          detect: (billede: HTMLVideoElement) => Promise<{ rawValue: string }[]>;
-        } }
-      ).BarcodeDetector;
-      const detector = new BarcodeDetectorKlasse({ formats: ["qr_code"] });
+      // willReadFrequently: vi kalder getImageData mange gange i sekundet,
+      // ikke bare én gang — det beder browseren optimere til det.
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
 
-      const laesFrame = async () => {
-        if (annulleret || harScannet || !videoRef.current) return;
-        try {
-          const koder = await detector.detect(videoRef.current);
-          if (koder.length > 0) {
+      const laesFrame = () => {
+        if (annulleret || harScannet) return;
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const billede = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const kode = jsQR(billede.data, billede.width, billede.height);
+          if (kode) {
             harScannet = true;
-            onScan(koder[0].rawValue);
+            onScan(kode.data);
             return;
           }
-        } catch {
-          // Videoen er ikke klar til at blive læst endnu — prøv næste frame.
         }
         requestAnimationFrame(laesFrame);
       };
@@ -278,25 +271,29 @@ function Scanner({
     }
 
     start().catch(() => {
-      // Ingen kameraadgang. Den manuelle indtastning nedenfor virker stadig.
+      // Ingen kameraadgang (afvist tilladelse, intet kamera, gammel
+      // browser) — den manuelle indtastning nedenfor virker stadig.
+      setKameraFejlede(true);
     });
 
     return () => {
       annulleret = true;
       stream?.getTracks().forEach((spor) => spor.stop());
     };
-  }, [understoetterKamera, onScan]);
+  }, [onScan]);
 
   return (
     <div>
-      {understoetterKamera ? (
-        <video ref={videoRef} muted playsInline style={{ width: "100%" }} />
-      ) : (
+      {kameraFejlede ? (
         <p>
-          Denne telefons browser kan ikke scanne QR-koder. Indtast koden i
+          Denne telefon giver ikke adgang til kameraet. Indtast koden i
           stedet.
         </p>
+      ) : (
+        <video ref={videoRef} muted playsInline style={{ width: "100%" }} />
       )}
+      {/* Bruges kun til at læse kameraets billede ind til jsQR, vises aldrig selv. */}
+      <canvas ref={canvasRef} style={{ display: "none" }} />
       <form
         onSubmit={(event) => {
           event.preventDefault();
