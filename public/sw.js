@@ -29,6 +29,32 @@ self.addEventListener("fetch", (event) => {
   if (new URL(request.url).origin !== self.location.origin) return;
   if (request.url.includes("/api/")) return;
 
+  // Selve siderne (HTML): netværk først, så en ny udgivelse altid slår
+  // igennem med det samme for den, der har forbindelse — cachen bruges
+  // kun som fallback, hvis der reelt ingen forbindelse er. Den oprindelige
+  // udgave viste altid den cachede side først (ægte
+  // stale-while-revalidate), hvilket betød at en ny udgivelse først slog
+  // igennem ved et ANDET genbesøg, ikke det første — forvirrende for en
+  // sliber, der har åbnet siden før og ikke ved, at der findes en
+  // service worker.
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then((svar) => {
+          if (svar.ok) {
+            caches.open(CACHE_NAVN).then((cache) => cache.put(request, svar.clone()));
+          }
+          return svar;
+        })
+        .catch(() => caches.open(CACHE_NAVN).then((cache) => cache.match(request))),
+    );
+    return;
+  }
+
+  // Statiske filer (fx /_next/static/...): deres adresse indeholder et
+  // indholds-hash og ændrer sig derfor aldrig for den samme fil — her er
+  // det trygt at vise fra cachen først, ingen risiko for en forældet
+  // udgave af netop den fil.
   event.respondWith(
     caches.open(CACHE_NAVN).then(async (cache) => {
       const cached = await cache.match(request);

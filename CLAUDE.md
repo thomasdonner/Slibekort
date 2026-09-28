@@ -1240,3 +1240,34 @@ understøtter ikke `BarcodeDetector`-API'et, kun Chrome/Edge/Android gør.
   fejler (afvist tilladelse, intet kamera, en for gammel browser) — en
   mere korrekt fejltilstand end at gætte ud fra browserens navn/API'er,
   og samtidig mindre kode, ikke mere.
+
+## Beslutninger undervejs — fejl: en udgivelse slog ikke igennem på telefonen
+
+Fejl: efter jsQR-rettelsen ovenfor blev udgivet, viste sliberens telefon
+stadig den gamle fejltekst ("Denne telefons browser kan ikke scanne
+QR-koder") — selvom den nye kode allerede kørte på serveren.
+
+Årsagen var service workeren (`public/sw.js`, se punkt 2), ikke
+udgivelsen selv. Den var skrevet til ægte "stale-while-revalidate" for
+**alle** sider: vis altid den cachede udgave med det samme, opdatér
+cachen i baggrunden til *næste* besøg. En sliber, der havde åbnet `/slib`
+før, ville derfor altid se ét besøg bagud, uanset hvor mange nye
+udgivelser der var kommet imellem — forvirrende, for de aner ikke, at der
+findes en service worker eller en cache.
+
+- **Sider (HTML) er nu netværk-først, cache kun som fallback.** Rammer
+  `event.respondWith` en navigation (`request.mode === "navigate"`),
+  prøves netværket altid først — kun hvis det fejler (reelt ingen
+  forbindelse), bruges den cachede udgave. En ny udgivelse slår dermed
+  igennem med det samme for enhver, der har forbindelse, og cachen
+  bruges kun til det, den faktisk var tiltænkt: at scanneren stadig kan
+  åbnes, når signalet i sliberummet er dårligt.
+- **Statiske filer (`/_next/static/...` m.fl.) beholder den gamle
+  cache-først-adfærd** — deres adresse indeholder et indholds-hash og
+  ændrer sig derfor aldrig for den samme fil, så der er ingen
+  forældelsesrisiko ved at vise dem fra cachen først. Kun selve
+  side-navigationerne var problemet.
+- **`CACHE_NAVN` er stadig `"slibekort-v1"`, ikke bumpet** — med
+  netværk-først for sider er det ikke længere nødvendigt at ændre
+  cache-navnet ved hver udgivelse for at undgå denne fejl; den gamle
+  cache bliver bare aldrig læst for en side, man har forbindelse til.
