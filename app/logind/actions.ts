@@ -15,7 +15,14 @@ export async function logInd(
   }
 
   try {
-    await signIn("resend", { email, redirectTo: "/logind/tjek-mail" });
+    // redirectTo er IKKE hvor man ender lige efter at have bedt om linket
+    // (det styrer pages.verifyRequest i lib/auth.ts, allerede sat til
+    // /logind/tjek-mail) — det er hvor Auth.js sender brugeren hen, efter
+    // linket i selve mailen er klikket og login er gennemført. "/" er
+    // forsidens egen omdirigering til /overblik eller /slib efter rolle;
+    // pegede den fejlagtigt på /logind/tjek-mail, endte man tilbage på
+    // "Tjek din mail"-siden, selvom man allerede var logget ind.
+    await signIn("resend", { email, redirectTo: "/" });
   } catch (error) {
     if (error instanceof AuthError) {
       return { fejl: "Kunne ikke sende login-linket. Prøv igen." };

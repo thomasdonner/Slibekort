@@ -1175,3 +1175,37 @@ og feltet faldt helt tilbage til browserens rå, ustylede standardudseende.
   rettede felter beholder den almindelige, delte input-stil — kun dette
   ene fik ekstra vægt, fordi det er det eneste af dem, der reelt kan
   blokere en handling, hvis det ikke lægges mærke til.
+
+## Beslutninger undervejs — første rigtige lancering
+
+Efter det tekniske var på plads (Vercel, `slibekort.aaik.dk`, MobilePay-webhook,
+oprydning af testdata — se punkterne ovenfor), blev systemet afprøvet for
+første gang med et rigtigt Holdsport-hold og en rigtig sliber-telefon. Det
+fandt to rigtige fejl, ingen af dem synlige i lokal udvikling:
+
+- **Fejl: appens kode kørte i USA, databasen i Europa.** Vercels
+  "Function Region" stod på standardværdien (Washington, D.C. — `iad1`),
+  mens Neon-databasen ligger i `eu-central-1` (Frankfurt), som
+  kravspecifikationen kræver. Hver forespørgsel lavede dermed turen
+  Danmark → USA (hvor koden kørte) → Frankfurt (databasen) → USA →
+  Danmark, hvilket mærkedes som generel træghed — ikke en fejl i selve
+  koden, en infrastruktur-indstilling der aldrig var sat aktivt. Rettet
+  ved at sætte Function Region til **Frankfurt, Germany (`fra1`)** i
+  Vercels projektindstillinger — bekræftet i logs ved at se "Routed to"
+  skifte fra Washington til Frankfurt, og svartiden falde til under 200ms.
+- **Fejl: magisk login-link sendte brugeren tilbage til "Tjek din
+  mail"-siden, selv efter et gennemført login.** I
+  `app/logind/actions.ts` blev `redirectTo: "/logind/tjek-mail"` givet
+  til `signIn()` — men `redirectTo` styrer IKKE hvor man lander lige
+  efter at have bedt om linket (det gør `pages.verifyRequest` i
+  `lib/auth.ts`, allerede korrekt sat til `/logind/tjek-mail`); det
+  styrer hvor Auth.js sender brugeren hen, **efter** selve linket i
+  mailen er klikket og login er gennemført. Fordi den fejlagtigt pegede
+  på "Tjek din mail"-siden, endte en færdig-logget-ind bruger tilbage
+  der, ikke på forsidens smarte omdirigering til `/overblik`/`/slib`.
+  Rettet til `redirectTo: "/"`. Ikke fanget i nogen af de tidligere
+  afprøvninger (`/afprov-som` sætter sessionen direkte, uden om det
+  rigtige magiske link, og alle øvrige rigtige logins i denne session
+  var som administrator, der allerede havde vænnet sig til at klikke
+  logoet manuelt) — kun en sliber, der prøvede det rigtige link for
+  første gang på sin egen telefon, afslørede det.
