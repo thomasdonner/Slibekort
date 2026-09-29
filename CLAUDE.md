@@ -1329,3 +1329,31 @@ allerede har set og vurderet, uden at kunne skelne dem fra noget nyt.
   spiller, der stadig har lav saldo af en helt anden grund — accepteret
   som en usandsynlig sammenfaldsrisiko, frem for at holde to forskellige
   betydninger af samme felt ude fra hinanden.
+
+## Beslutninger undervejs — fejl: Vercel byggede med en forældet Prisma-klient
+
+Fejl: første rigtige deploy efter `haandteret`-feltet ovenfor slog fejl på
+Vercel med TypeScript-fejl om at `haandteret` og `spiller` ikke fandtes på
+de relevante typer — selvom `npm run build` kørte fint lokalt med præcis
+samme kode.
+
+**Årsagen stod i selve build-loggen, ikke i koden:** `npm install` sagde
+"up to date" og sprang derfor `@prisma/client`s eget postinstall-script
+over — det er netop det script, der normalt genererer Prisma-klienten ud
+fra `schema.prisma`. Fordi denne ændring kun rørte skemaet, ikke selve
+`package.json`, opfattede npm (med Vercels genbrugte build-cache) det som
+"intet at installere", og Vercel byggede derfor med en cached, forældet
+klient uden det nye felt.
+
+- **Rettet med `"postinstall": "prisma generate"` i `package.json`** —
+  det er et *projekt-eget* lifecycle-script, ikke en underafhængigheds
+  eget, og det kører derfor ved hver eneste `npm install`, uanset om npm
+  selv mener der er ændringer i `node_modules`. Bekræftet lokalt ved
+  udtrykkeligt at slette den genererede klient og køre `npm install`
+  igen — scriptet kørte og regenererede den, før npm overhovedet nåede
+  frem til sin egen "up to date"-besked.
+- **Dette ville ellers ramme enhver fremtidig ændring af
+  `prisma/schema.prisma` på Vercel**, ikke kun denne ene — enhver
+  migration uden en samtidig `package.json`-ændring risikerede nøjagtig
+  samme forældede build. Rettelsen er derfor permanent, ikke en
+  engangsreparation af dette ene deploy.
