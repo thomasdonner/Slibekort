@@ -61,6 +61,36 @@ export async function rettSaldo(formData: FormData) {
   revalidatePath("/overblik");
 }
 
+// Fjerner én bevægelse fra "Bevægelser der kræver et kig" på /overblik,
+// uden at røre selve bevægelsen eller dens note — historikken på
+// spillerens side viser den uændret, det er kun den samlede liste over
+// ting der mangler et kig, der bliver kortere. Samme rolle som kan rette
+// saldi (kasserer/administrator), da det typisk er accounting-flag
+// (spærretid, mulig dobbeltbetaling), ikke noget en holdleder handler på.
+export async function markerBevaegelseSet(formData: FormData) {
+  const adgang = await kraevOverblikAdgang();
+  if (!adgang.ok || !kanRetteSaldi(adgang.adgang)) {
+    throw new Error("Ingen adgang til at afkrydse bevægelser.");
+  }
+
+  const bevaegelseId = String(formData.get("bevaegelseId"));
+  const bevaegelse = await prisma.bevaegelse.findUnique({
+    where: { id: bevaegelseId },
+    include: { spiller: true },
+  });
+  if (!bevaegelse) throw new Error("Ukendt bevægelse.");
+  if (!kanSeHold(adgang.adgang, bevaegelse.spiller.hold)) {
+    throw new Error("Ingen adgang til det hold.");
+  }
+
+  await prisma.bevaegelse.update({
+    where: { id: bevaegelseId },
+    data: { haandteret: true },
+  });
+
+  revalidatePath("/overblik");
+}
+
 export async function udstedNyQr(formData: FormData) {
   const adgang = await kraevOverblikAdgang();
   if (!adgang.ok || !kanRetteSaldi(adgang.adgang)) {

@@ -639,6 +639,20 @@ th {
   color: var(--tekst-svag);
 }
 
+/* Teksten fylder resten af rækken, så "Markér som set"-knappen skubbes
+   helt ud til højre i stedet for at klistre op ad selve teksten. */
+.flag-raekke-tekst {
+  flex: 1;
+}
+
+.flag-raekke form {
+  flex-shrink: 0;
+}
+
+.flag-raekke button {
+  white-space: nowrap;
+}
+
 /* Kvitteringen i scanneren — den skærm sliberen ser oftest af alle, skal
    føles som en bekræftelse, ikke bare endnu en tekstlinje. */
 .kvittering {

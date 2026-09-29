@@ -77,6 +77,10 @@ model Bevaegelse {
   // udfoertAfId her peger på den delte konto, ikke en bestemt person.
   udfoertAfNavn String?
   note         String?
+  // Kassereren/administratoren har set noten og vurderet, at den ikke
+  // kræver mere — bevægelsen (og selve noten) forbliver i historikken,
+  // den forsvinder kun fra "Bevægelser der kræver et kig" på /overblik.
+  haandteret   Boolean        @default(false)
   // Nøgle fra telefonen, forhindrer at en genafsendt offline-scanning tæller to gange.
   klientId     String         @unique
   // Sat på en 'fortrudt'-raekke: id'et på den bevaegelse (typisk en

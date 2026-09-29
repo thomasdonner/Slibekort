@@ -15,6 +15,7 @@ import {
   IkonSystem,
 } from "@/app/ikoner";
 import { ENGANGSSLIBNING_HOLD } from "@/lib/spillere/engangsslibning";
+import { markerBevaegelseSet } from "./actions";
 
 export default async function OverblikSide({
   searchParams,
@@ -85,6 +86,7 @@ export default async function OverblikSide({
   const flaggedeBevaegelserRaa = await prisma.bevaegelse.findMany({
     where: {
       note: { not: null },
+      haandteret: false,
       ...(aktivtHold
         ? { spiller: { hold: aktivtHold } }
         : holdFilter
@@ -241,7 +243,7 @@ export default async function OverblikSide({
             {flaggedeBevaegelser.map((b) => (
               <li className="flag-raekke" key={b.id}>
                 <IkonAdvarsel />
-                <div>
+                <div className="flag-raekke-tekst">
                   <Link href={`/overblik/spillere/${b.spillerId}`}>
                     {b.spiller.navn} ({b.spiller.hold})
                   </Link>
@@ -250,6 +252,14 @@ export default async function OverblikSide({
                     {new Date(b.tidspunkt).toLocaleString("da-DK")}
                   </time>
                 </div>
+                {kanRetteSaldi(adgang.adgang) && (
+                  <form action={markerBevaegelseSet}>
+                    <input type="hidden" name="bevaegelseId" value={b.id} />
+                    <button type="submit" className="knap-tekst">
+                      Markér som set
+                    </button>
+                  </form>
+                )}
               </li>
             ))}
           </ul>

@@ -1302,3 +1302,30 @@ selve ikonet) — begge dele en større ændring, ikke valgt her.
   fuldskærm) er ikke fjernet** — den er harmløs for enhver, der ikke er
   afhængig af den til login-persistens, og kan stadig bruges af nogen,
   der ikke er generet af at skulle logge ind igen en gang imellem.
+
+## Beslutninger undervejs — "Markér som set" på flagede bevægelser
+
+Ønske: "Bevægelser der kræver et kig" viste hidtil enhver bevægelse med
+en note og ingen måde at fjerne den fra listen igen — med 250 medlemmer
+ville listen (eller i hvert fald de 20 nyeste, se `take: 20` i
+`app/overblik/page.tsx`) hurtigt blive fyldt med ting, kassereren
+allerede har set og vurderet, uden at kunne skelne dem fra noget nyt.
+
+- **`Bevaegelse.haandteret: Boolean`**, ikke en sletning af noten eller
+  bevægelsen. Historikken på spillerens side viser noten uændret for
+  altid — kun den samlede "kræver et kig"-liste bliver kortere.
+- **`markerBevaegelseSet`** (`app/overblik/actions.ts`) sætter kun det
+  ene felt, samme adgangstjek som resten af overblikket
+  (`kanRetteSaldi` + `kanSeHold` for bevægelsens spillers hold).
+- **Kun kasserer/administrator ser knappen**, ikke holdleder — samme
+  begrundelse som resten af "kræver et kig": det er typisk
+  regnskabsmæssige flag (spærretid, mulig dobbeltbetaling), ikke noget
+  en holdleder skal handle på.
+- **`haandteret: false` er lagt direkte i forespørgslen**, ikke som et
+  ekstra filter bagefter for kasserer/administrator alene — det virker
+  derfor ens for alle roller, inklusive holdlederens indsnævrede
+  saldo≤1-visning. En holdleders "husk at rykke denne forælder" kunne i
+  sjældne tilfælde forsvinde, hvis kassereren afkrydser en note på en
+  spiller, der stadig har lav saldo af en helt anden grund — accepteret
+  som en usandsynlig sammenfaldsrisiko, frem for at holde to forskellige
+  betydninger af samme felt ude fra hinanden.
