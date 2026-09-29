@@ -97,18 +97,22 @@ export default async function AdgangSide() {
                 <td>{b.aktiv ? "Aktiv" : "Spærret"}</td>
                 <td>{sessionKort.get(b.userId) ?? 0}</td>
                 <td>
-                  {b.aktiv && (
-                    <form action={fjernAdgang}>
+                  <div className="tabel-handlinger">
+                    {b.aktiv && (
+                      <form action={fjernAdgang}>
+                        <input type="hidden" name="brugerId" value={b.id} />
+                        <button type="submit" className="knap-fare">
+                          Fjern adgang
+                        </button>
+                      </form>
+                    )}
+                    <form action={logAlleEnhederUd}>
                       <input type="hidden" name="brugerId" value={b.id} />
-                      <button type="submit" className="knap-fare">
-                        Fjern adgang
+                      <button type="submit" className="knap-rolig">
+                        Log enheder ud
                       </button>
                     </form>
-                  )}
-                  <form action={logAlleEnhederUd}>
-                    <input type="hidden" name="brugerId" value={b.id} />
-                    <button type="submit">Log enheder ud</button>
-                  </form>
+                  </div>
                 </td>
               </tr>
             ))}

@@ -438,6 +438,49 @@ button.knap-fare:hover {
   transform: none;
 }
 
+/* Samme omridsede opbygning som .knap-fare, men i en neutral farve —
+   til en handling der er værd at lægge mærke til (den logger en enhed
+   ud med det samme), men ikke er i nærheden af lige så alvorlig som en
+   "fare"-handling. Bruges ved siden af .knap-fare i adgangsstyringens
+   tabel, hvor begge ellers ville kæmpe om samme opmærksomhed som to
+   ens, fyldte røde knapper. */
+button.knap-rolig {
+  background: transparent;
+  color: var(--tekst);
+  border-color: var(--kant);
+}
+
+button.knap-rolig:hover {
+  background: var(--baggrund);
+  border-color: var(--tekst-svag);
+  filter: none;
+  box-shadow: none;
+  transform: none;
+}
+
+/* To handlings-formularer side om side i én tabelcelle (Adgangsstyring),
+   ikke stablet under hinanden som almindelige formularer på en side —
+   uden dette arver de form + form's stiplede skillelinje (beregnet til
+   en side fulde af formularer, ikke to små handlinger i én tabelrække)
+   og hver sin fulde 44px-knap, hvilket gjorde rækkerne unødigt høje. */
+.tabel-handlinger {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.tabel-handlinger form + form {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.tabel-handlinger button {
+  padding: 0.4rem 0.85rem;
+  min-height: 34px;
+  font-size: 0.82rem;
+}
+
 /* Rolig, tekstlignende knap — bruges i kontomenuen, ikke en handling man
    skal lægge mærke til på afstand som de røde handlingsknapper. */
 button.knap-tekst {

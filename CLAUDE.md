@@ -1393,3 +1393,28 @@ forbyder at gemme, uanset hvilket felt det står i.
   dem: den nye, rene tekst ville have talt som et helt nyt navn (jf.
   `(navn, hold)`-nøglen import genkender på), og oprettet 29 dubletter i
   stedet for at opdatere de eksisterende rækker.
+
+## Beslutninger undervejs — fejl: "Fjern adgang"/"Log enheder ud" så tossede ud
+
+Fejl: de to handlingsknapper i `/overblik/adgang`s tabel stod stablet i
+hver sin fulde bredde, med en tydelig stiplet linje imellem, og gjorde
+hver række unødvendigt høj.
+
+Årsagen var, at de globale regler for almindelige, stående formularer på
+en side (`form { flex-direction: column }` og `form + form`s stiplede
+skillelinje, beregnet til fx flere kontakt-formularer under hinanden på
+en spillers side) også ramte de to små handlingsformularer i tabellens
+sidste kolonne — et sted de aldrig var tiltænkt. Samme historie med selve
+knapperne: standardknappens `min-height: 44px` er rigtig til en
+selvstændig knap, men gjorde to stablede knapper i en tabelcelle unødigt
+store.
+
+- **Ny klasse `.tabel-handlinger`** (`app/globals.css`) omkring de to
+  formularer: en flex-række med mindre knapper, og en eksplicit
+  nulstilling af `form + form`s skillelinje inden for netop denne
+  sammenhæng — resten af sidens formularer er upåvirkede.
+- **`button.knap-rolig`**, en ny knap-stil til "Log enheder ud" — samme
+  omridsede opbygning som `.knap-fare`, men i en neutral farve i stedet
+  for rød. At logge en enhed ud er langt fra så alvorligt som at fjerne
+  adgang helt, og de to knapper skal derfor ikke kæmpe om samme
+  opmærksomhed som to ens, fyldte røde knapper ved siden af hinanden.
