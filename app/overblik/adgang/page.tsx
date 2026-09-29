@@ -25,8 +25,8 @@ export default async function AdgangSide() {
     <main>
       <h1>Adgangsstyring</h1>
       <p>
-        Kun administrator kan give eller fjerne adgang — se CLAUDE.md for
-        hvorfor det ikke også er kasserer.
+        Kun administrator kan give eller fjerne adgang — det er
+        administratorens ekstra beføjelse ud over kasserens.
       </p>
 
       <section>
