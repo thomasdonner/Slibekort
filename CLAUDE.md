@@ -561,8 +561,10 @@ MobilePay, før den publiceres — det sidste kan koden ikke selv bekræfte.
 ## Import
 
 Kilden er Holdsports **xlsx**-eksport, én fil pr. hold, én række pr.
-spiller. `#12` i efternavnet fjernes og kasseres. `E-mail 2` bruges kun,
-når den er forskellig fra `E-mail`.
+spiller. Trøjenummer og fødselsår i efternavnet fjernes og kasseres — se
+"Beslutninger undervejs — fejl: parenteser og fødselsår blev ikke
+fjernet fra navnet" for de præcise varianter, Holdsport rent faktisk
+bruger. `E-mail 2` bruges kun, når den er forskellig fra `E-mail`.
 
 `scripts/importtjek.py` gør allerede dette og skriver en rapport over det,
 holdlederen skal rette. Genbrug logikken derfra frem for at skrive den om.
@@ -1357,3 +1359,37 @@ klient uden det nye felt.
   migration uden en samtidig `package.json`-ændring risikerede nøjagtig
   samme forældede build. Rettelsen er derfor permanent, ikke en
   engangsreparation af dette ene deploy.
+
+## Beslutninger undervejs — fejl: parenteser og fødselsår blev ikke fjernet fra navnet
+
+Fejl, fundet ved det første rigtige holdimport (U12, 35 spillere, en
+rigtig Holdsport-fil): flere spillernavne endte med et tomt `()`, og ét
+med et fødselsår i parentes — fx "Alf Sejr Røge Petersen (2015)".
+
+Den oprindelige `delNavn` (`lib/import/holdsport.ts`, port af
+`scripts/importtjek.py`s `del_navn`) fjernede kun selve `#12`-mønsteret,
+ikke parenteserne omkring det. Det holdt, så længe Holdsport skrev
+trøjenummeret uden parenteser ("Hansen #9") — men en rigtig eksport viste
+sig at bruge **flere forskellige formater i samme fil**: `"(#12)"`,
+`"(# 12)"` (mellemrum efter #), `"#12"` uden parenteser, og — når
+spilleren slet ikke har et trøjenummer endnu — **fødselsåret alene i
+parentes**, `"(2015)"`. Det sidste er ikke bare kosmetisk: et fødselsår
+er præcis den slags data, "Data vi aldrig gemmer" (ovenfor) eksplicit
+forbyder at gemme, uanset hvilket felt det står i.
+
+- **Rettet til at fjerne et helt afsluttende parentes-udtryk, uanset
+  indhold** — ikke kun tal, ikke kun trøjenumre. Kun *derefter* fjernes
+  et evt. resterende bart `#12` uden parenteser. To regex-trin i stedet
+  for ét, i begge filer (`lib/import/holdsport.ts` og
+  `scripts/importtjek.py`, samme rettelse begge steder, jf. "Genbrug
+  logikken derfra").
+- **7 testtilfælde tilføjet** (`lib/import/holdsport.test.ts`), ét pr.
+  reelt observeret format fra den rigtige fil — ikke opdigtede
+  eksempler, men de faktiske varianter, der stod i den.
+- **De 29 allerede-importerede spillere med et fejlagtigt navn blev
+  rettet direkte i databasen** (et midlertidigt, øjeblikkeligt slettet
+  script, samme mønster som tidligere oprydninger) — kun selve `navn`,
+  intet andet rørt. En ny import af samme fil ville ikke have rettet
+  dem: den nye, rene tekst ville have talt som et helt nyt navn (jf.
+  `(navn, hold)`-nøglen import genkender på), og oprettet 29 dubletter i
+  stedet for at opdatere de eksisterende rækker.

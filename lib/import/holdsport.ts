@@ -38,10 +38,18 @@ function mailAdresse(v: unknown): string {
   return tekst(v).toLowerCase();
 }
 
-// Fjerner '#12' fra efternavnet. Trøjenummeret bruges ikke.
+// Fjerner trøjenummer og fødselsår fra efternavnet — begge dele skal
+// kasseres, ikke gemmes (se CLAUDE.md, "Data vi aldrig gemmer"). Holdsport
+// skriver det forskelligt fra spiller til spiller: "(#12)", "(# 12)",
+// "#12" uden parenteser, eller ligefrem fødselsåret alene i parentes,
+// "(2015)", når der ikke er noget trøjenummer endnu. Et trailing
+// parentes-udtryk fjernes derfor helt, uanset indhold — ikke kun tallet
+// inde i det, som den gamle version gjorde (hvilket lod tomme "()" stå
+// tilbage).
 function delNavn(fornavn: unknown, efternavn: unknown): string {
-  const rent = tekst(efternavn).replace(/#\s*\d+/g, "").trim();
-  return `${tekst(fornavn)} ${rent}`.trim();
+  const udenParentes = tekst(efternavn).replace(/\s*\([^)]*\)\s*$/, "");
+  const udenTroeje = udenParentes.replace(/\s*#\s*\d+\s*$/, "");
+  return `${tekst(fornavn)} ${udenTroeje.trim()}`.trim();
 }
 
 /**

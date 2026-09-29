@@ -44,9 +44,17 @@ def mail(v):
 
 
 def del_navn(fornavn, efternavn):
-    """Fjerner '#12' fra efternavnet. Trøjenummeret bruges ikke."""
-    rent = re.sub(r"#\s*\d+", "", efternavn or "").strip()
-    return f"{tekst(fornavn)} {rent}".strip()
+    """Fjerner trøjenummer og fødselsår fra efternavnet — begge dele skal
+    kasseres, ikke gemmes (se CLAUDE.md, "Data vi aldrig gemmer").
+    Holdsport skriver det forskelligt fra spiller til spiller: "(#12)",
+    "(# 12)", "#12" uden parenteser, eller ligefrem fødselsåret alene i
+    parentes, "(2015)", når der ikke er noget trøjenummer endnu. Et
+    trailing parentes-udtryk fjernes derfor helt, uanset indhold — ikke
+    kun tallet inde i det, som den gamle version gjorde (hvilket lod
+    tomme "()" stå tilbage)."""
+    uden_parentes = re.sub(r"\s*\([^)]*\)\s*$", "", efternavn or "")
+    uden_troeje = re.sub(r"\s*#\s*\d+\s*$", "", uden_parentes)
+    return f"{tekst(fornavn)} {uden_troeje.strip()}".strip()
 
 
 def laes_xlsx(sti):

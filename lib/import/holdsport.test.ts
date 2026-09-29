@@ -75,6 +75,25 @@ describe("parseHoldsportRaekker", () => {
     expect(spillere[0].navn).toBe("Anders And");
   });
 
+  // Set i en rigtig Holdsport-eksport: samme trøjenummer skrives
+  // forskelligt fra spiller til spiller, og nogle har slet intet
+  // trøjenummer, kun fødselsåret i parentes i stedet.
+  it.each([
+    ["And (#12)", "Anders And"],
+    ["And (# 12)", "Anders And"],
+    ["And(#12)", "Anders And"],
+    ["And#12", "Anders And"],
+    ["And (2015)", "Anders And"],
+    ["And ()", "Anders And"],
+    ["And", "Anders And"],
+  ])("renser %s til %s", (efternavn, forventet) => {
+    const { spillere } = parseHoldsportRaekker(
+      [raekke({ Fornavn: "Anders", Efternavn: efternavn })],
+      "U14",
+    );
+    expect(spillere[0].navn).toBe(forventet);
+  });
+
   it("springer trænere og holdledere over", () => {
     const { spillere } = parseHoldsportRaekker(
       [
