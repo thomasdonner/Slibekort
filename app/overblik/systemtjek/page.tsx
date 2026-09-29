@@ -27,21 +27,23 @@ function Gruppe({ titel, raekker }: { titel: string; raekker: Raekke[] }) {
   return (
     <section>
       <h2>{titel}</h2>
-      <table>
-        <tbody>
-          {raekker.map((r) => (
-            <tr key={r.navn}>
-              <td>
-                <code>{r.navn}</code>
-              </td>
-              <td>
-                <Status sat={r.sat} />
-              </td>
-              <td>{r.vaerdi ?? ""}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <div className="tabel-scroll">
+        <table>
+          <tbody>
+            {raekker.map((r) => (
+              <tr key={r.navn}>
+                <td>
+                  <code>{r.navn}</code>
+                </td>
+                <td>
+                  <Status sat={r.sat} />
+                </td>
+                <td>{r.vaerdi ?? ""}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }

@@ -277,26 +277,28 @@ export default async function OverblikSide({
                 : "Din konto har ikke fået adgang til noget hold endnu."}
             </p>
           ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Navn</th>
-                  <th>Hold</th>
-                  <th className="tal">Saldo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {spillere.map((s) => (
-                  <tr key={s.id}>
-                    <td>
-                      <Link href={`/overblik/spillere/${s.id}`}>{s.navn}</Link>
-                    </td>
-                    <td>{s.hold}</td>
-                    <td className={`tal ${saldoKlasse(s.saldo)}`}>{s.saldo}</td>
+            <div className="tabel-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Navn</th>
+                    <th>Hold</th>
+                    <th className="tal">Saldo</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {spillere.map((s) => (
+                    <tr key={s.id}>
+                      <td>
+                        <Link href={`/overblik/spillere/${s.id}`}>{s.navn}</Link>
+                      </td>
+                      <td>{s.hold}</td>
+                      <td className={`tal ${saldoKlasse(s.saldo)}`}>{s.saldo}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       ) : (

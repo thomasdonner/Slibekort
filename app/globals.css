@@ -508,6 +508,23 @@ button.knap-tekst svg {
   color: var(--tekst-svag);
 }
 
+/* En tabel med mange kolonner (fx adgangsstyringens otte) kan blive bredere
+   end kortets faste bredde (main's max-width: 760px). Uden dette ville
+   tabellen visuelt bryde ud over kortets afrundede kant i stedet for at
+   kunne scrolles vandret inden for den. */
+.tabel-scroll {
+  overflow-x: auto;
+}
+
+/* width: 100% nedenfor ville ellers tvinge tabellen til at klemme sig ind i
+   kortets bredde i stedet for at være bredere end den og lade
+   .tabel-scroll rulle — så her skal tabellen få lov at være så bred, dens
+   indhold kræver. */
+.tabel-scroll table {
+  width: max-content;
+  min-width: 100%;
+}
+
 table {
   width: 100%;
   border-collapse: collapse;

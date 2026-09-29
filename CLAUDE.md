@@ -1360,6 +1360,47 @@ klient uden det nye felt.
   samme forældede build. Rettelsen er derfor permanent, ikke en
   engangsreparation af dette ene deploy.
 
+## Beslutninger undervejs — fejl: tabel bredere end kortet på `/overblik/adgang`
+
+Fejl, i to omgange. Kassererens "Hvem har adgang"-tabel så "tosset" ud.
+Første forsøg rettede kun det halve af problemet: `form + form`s globale
+stiplede kant og en for høj standard-`button` lækkede ind i handlings-
+cellen, rettet med en `.tabel-handlinger`-wrapper og en ny, neutral
+`.knap-rolig`-knapstil (rolig i stedet for rød, til "Log enheder ud", som
+ikke er en lige så alvorlig handling som "Fjern adgang"). Brugeren viste
+et nyt screenshot: selve **tabellen** var bredere end kortet og stak lige
+ud over dets afrundede kant i højre side — otte kolonner er simpelthen for
+meget til `main`s faste `max-width: 760px`, uanset hvor pæne knapperne i
+sig selv var blevet.
+
+- **Løst med en generel `.tabel-scroll`-wrapper om `<table>`**, ikke kun
+  på denne ene side — `grep -rln "<table" app` fandt fire filer i alt
+  (`/overblik`, `/overblik/adgang`, `/overblik/systemtjek`,
+  spillerens `/overblik/spillere/[id]` med to tabeller), og alle fire fik
+  samme wrapper. "Kedelig kode" betyder at løse det generelle problem én
+  gang, ikke fire separate lappeløsninger, og en tabel, der en dag bliver
+  for bred et femte sted, arver automatisk samme løsning.
+- **Eksplicit wrapper-`<div>` i JSX, ikke en CSS `:has()`-selector.**
+  `section:has(table) { overflow-x: auto }` ville også have virket og
+  krævet nul ændringer i JSX — men CLAUDE.md's egen regel ("Eksplicit
+  frem for konventionsbaseret, hvor der er valg") pegede direkte imod
+  det: en sektions opførsel, der stille ændrer sig ud fra hvad den
+  tilfældigvis indeholder, er sværere at gennemskue for den frivillige,
+  der en dag skal fejlfinde en tabel, end en `<div>` man kan se med det
+  samme.
+- **`.tabel-scroll table` sætter `width: max-content` (med `min-width:
+  100%`)**, ikke kun `overflow-x: auto` på wrapperen alene — uden det ville
+  tabellens egen `width: 100%` (sat globalt på `table`) tvinge den til at
+  klemme sig ind i kortets bredde og ombrække indholdet grimt i stedet for
+  rent faktisk at blive bredere end kortet og udløse scroll-baren.
+  Bekræftet ved at scrolle tabellen programmatisk til `scrollLeft = 9999`
+  i browseren og se "Fjern adgang"/"Log enheder ud" dukke tydeligt frem i
+  deres rigtige stil, stadig inden for kortets afrundede kant.
+- **Ingen ændring nødvendig i selve `/overblik`s spillertabel** (kun tre
+  kolonner, allerede smallere end kortet) — wrapperen er harmløs for en
+  tabel, der i forvejen passer, præcis fordi `overflow-x: auto` kun gør
+  noget, når der reelt er noget at scrolle.
+
 ## Beslutninger undervejs — fejl: parenteser og fødselsår blev ikke fjernet fra navnet
 
 Fejl, fundet ved det første rigtige holdimport (U12, 35 spillere, en

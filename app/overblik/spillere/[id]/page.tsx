@@ -177,36 +177,38 @@ export default async function SpillerSide({
 
       <section>
         <h2>Historik</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Tidspunkt</th>
-              <th>Type</th>
-              <th>Antal</th>
-              <th>Udført af</th>
-              <th>Note</th>
-            </tr>
-          </thead>
-          <tbody>
-            {spiller.bevaegelser.map((b) => (
-              <tr key={b.id}>
-                <td>{new Date(b.tidspunkt).toLocaleString("da-DK")}</td>
-                <td>{b.type}</td>
-                <td>{b.antal}</td>
-                {/* Kun MobilePay-webhookens automatiske kreditering har
-                    ingen udfoertAf — alt andet (scanning, rettelse,
-                    fortrydelse) kræver et logget ind menneske.
-                    udfoertAfNavn er kun sat på en delt konto (fx en iPad i
-                    sliberummet) — sliberens eget indtastede navn er mere
-                    brugbart end selve kontoens navn i det tilfælde. */}
-                <td>
-                  {b.udfoertAfNavn ?? b.udfoertAf?.navn ?? "Automatisk (MobilePay)"}
-                </td>
-                <td>{b.note}</td>
+        <div className="tabel-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Tidspunkt</th>
+                <th>Type</th>
+                <th>Antal</th>
+                <th>Udført af</th>
+                <th>Note</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {spiller.bevaegelser.map((b) => (
+                <tr key={b.id}>
+                  <td>{new Date(b.tidspunkt).toLocaleString("da-DK")}</td>
+                  <td>{b.type}</td>
+                  <td>{b.antal}</td>
+                  {/* Kun MobilePay-webhookens automatiske kreditering har
+                      ingen udfoertAf — alt andet (scanning, rettelse,
+                      fortrydelse) kræver et logget ind menneske.
+                      udfoertAfNavn er kun sat på en delt konto (fx en iPad i
+                      sliberummet) — sliberens eget indtastede navn er mere
+                      brugbart end selve kontoens navn i det tilfælde. */}
+                  <td>
+                    {b.udfoertAfNavn ?? b.udfoertAf?.navn ?? "Automatisk (MobilePay)"}
+                  </td>
+                  <td>{b.note}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section>
@@ -214,26 +216,28 @@ export default async function SpillerSide({
         {spiller.mails.length === 0 ? (
           <p>Ingen mails sendt endnu.</p>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Tidspunkt</th>
-                <th>Type</th>
-                <th>Sendt til</th>
-                <th>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {spiller.mails.map((m) => (
-                <tr key={m.id}>
-                  <td>{new Date(m.tidspunkt).toLocaleString("da-DK")}</td>
-                  <td>{m.type}</td>
-                  <td>{m.sendtTil}</td>
-                  <td>{m.leveringsstatus}</td>
+          <div className="tabel-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tidspunkt</th>
+                  <th>Type</th>
+                  <th>Sendt til</th>
+                  <th>Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {spiller.mails.map((m) => (
+                  <tr key={m.id}>
+                    <td>{new Date(m.tidspunkt).toLocaleString("da-DK")}</td>
+                    <td>{m.type}</td>
+                    <td>{m.sendtTil}</td>
+                    <td>{m.leveringsstatus}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </main>

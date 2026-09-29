@@ -73,51 +73,53 @@ export default async function AdgangSide() {
 
       <section>
         <h2>Hvem har adgang</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Navn</th>
-              <th>E-mail</th>
-              <th>Roller</th>
-              <th>Hold</th>
-              <th>Delt konto</th>
-              <th>Status</th>
-              <th>Enheder logget ind</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {brugere.map((b) => (
-              <tr key={b.id}>
-                <td>{b.navn}</td>
-                <td>{b.user.email}</td>
-                <td>{b.roller.join(", ")}</td>
-                <td>{b.holdAdgang.map((h) => h.hold).join(", ")}</td>
-                <td>{b.delt ? "Ja" : ""}</td>
-                <td>{b.aktiv ? "Aktiv" : "Spærret"}</td>
-                <td>{sessionKort.get(b.userId) ?? 0}</td>
-                <td>
-                  <div className="tabel-handlinger">
-                    {b.aktiv && (
-                      <form action={fjernAdgang}>
+        <div className="tabel-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Navn</th>
+                <th>E-mail</th>
+                <th>Roller</th>
+                <th>Hold</th>
+                <th>Delt konto</th>
+                <th>Status</th>
+                <th>Enheder logget ind</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {brugere.map((b) => (
+                <tr key={b.id}>
+                  <td>{b.navn}</td>
+                  <td>{b.user.email}</td>
+                  <td>{b.roller.join(", ")}</td>
+                  <td>{b.holdAdgang.map((h) => h.hold).join(", ")}</td>
+                  <td>{b.delt ? "Ja" : ""}</td>
+                  <td>{b.aktiv ? "Aktiv" : "Spærret"}</td>
+                  <td>{sessionKort.get(b.userId) ?? 0}</td>
+                  <td>
+                    <div className="tabel-handlinger">
+                      {b.aktiv && (
+                        <form action={fjernAdgang}>
+                          <input type="hidden" name="brugerId" value={b.id} />
+                          <button type="submit" className="knap-fare">
+                            Fjern adgang
+                          </button>
+                        </form>
+                      )}
+                      <form action={logAlleEnhederUd}>
                         <input type="hidden" name="brugerId" value={b.id} />
-                        <button type="submit" className="knap-fare">
-                          Fjern adgang
+                        <button type="submit" className="knap-rolig">
+                          Log enheder ud
                         </button>
                       </form>
-                    )}
-                    <form action={logAlleEnhederUd}>
-                      <input type="hidden" name="brugerId" value={b.id} />
-                      <button type="submit" className="knap-rolig">
-                        Log enheder ud
-                      </button>
-                    </form>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
     </main>
   );
