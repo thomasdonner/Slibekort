@@ -60,6 +60,11 @@ export default async function BetalSide({
         </p>
         <button type="submit">Betal med MobilePay</button>
       </form>
+
+      <p>
+        Når du betaler, accepterer du{" "}
+        <a href="/salgsbetingelser">salgsbetingelserne</a>.
+      </p>
     </main>
   );
 }

@@ -1459,3 +1459,20 @@ store.
   for rød. At logge en enhed ud er langt fra så alvorligt som at fjerne
   adgang helt, og de to knapper skal derfor ikke kæmpe om samme
   opmærksomhed som to ens, fyldte røde knapper ved siden af hinanden.
+
+## Beslutninger undervejs — `/salgsbetingelser`
+
+Ønske: MobilePays oprettelse af Betalingsintegration kræver et link til en
+side med salgsbetingelser (betaling, fortrydelsesret, returnering,
+klagehåndtering).
+
+- **Ligger i selve appen** (`app/salgsbetingelser/page.tsx`), ikke på
+  WordPress-siden — MobilePay skal kunne åbne linket, og så ligger det på
+  samme sted som resten af systemet. Ingen login, som `/betal`.
+- **Priserne læses fra `lib/betaling/konstanter.ts`**, så siden aldrig kan
+  vise en anden pris end den, der trækkes. Kontaktmailen læses fra
+  `KASSERER_KONTAKT_EMAIL`.
+- **Fortrydelsesafsnittet (14 dage, ubrugte slibninger refunderes) er et
+  udkast**, ikke afgjort af klubben — det er juridisk formulering, ikke
+  noget koden kan afgøre. Skal bekræftes af kasserer/formand.
+- Linket står nederst på `/betal/[qrToken]`.
