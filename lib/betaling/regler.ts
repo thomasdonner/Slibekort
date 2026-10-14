@@ -1,16 +1,21 @@
 import type { BetalingStatus } from "@prisma/client";
 
 // Terminale hændelser hvor intet er indfriet — saldoen skal ikke røres.
-// "authorized" og "captured" håndteres for sig, ikke via denne, fordi de
+// "AUTHORIZED" og "CAPTURED" håndteres for sig, ikke via denne, fordi de
 // udløser handling (indfrielse, kreditering), ikke bare en statusopdatering.
+//
+// Navnene er dem, MobilePay skriver i selve webhook-beskeden (`name`:
+// "AUTHORIZED", store bogstaver) — ikke de lange hændelsestyper
+// ("epayments.payment.authorized.v1"), som kun bruges, når webhooken
+// registreres. Det blev først opdaget ved den første rigtige betaling.
 export function statusForAfvistHaendelse(navn: string): BetalingStatus | null {
   switch (navn) {
-    case "epayments.payment.aborted.v1":
+    case "ABORTED":
       return "afvist";
-    case "epayments.payment.expired.v1":
+    case "EXPIRED":
       return "udloebet";
-    case "epayments.payment.cancelled.v1":
-    case "epayments.payment.terminated.v1":
+    case "CANCELLED":
+    case "TERMINATED":
       return "annulleret";
     default:
       return null;

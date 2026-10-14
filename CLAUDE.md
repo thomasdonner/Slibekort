@@ -1476,3 +1476,30 @@ klagehåndtering).
   udkast**, ikke afgjort af klubben — det er juridisk formulering, ikke
   noget koden kan afgøre. Skal bekræftes af kasserer/formand.
 - Linket står nederst på `/betal/[qrToken]`.
+
+## Beslutninger undervejs — fejl: webhook-beskeder blev modtaget, men ikke genkendt
+
+Fejl, fundet ved den første rigtige MobilePay-betaling i produktion: en
+betaling på 40 kr. blev godkendt i MobilePay-appen, men saldoen steg ikke,
+og betalingens status blev stående på "oprettet". Vercels logs viste, at
+begge webhook-beskeder var modtaget og verificeret (status 200) — så
+signaturen og `MOBILEPAY_WEBHOOK_SECRET` var i orden.
+
+Årsagen: koden sammenlignede `name` i beskeden med de lange hændelsestyper
+(`epayments.payment.authorized.v1`), som man *registrerer* webhooken med.
+I selve beskeden skriver MobilePay det korte, store-bogstavs-navn:
+`"AUTHORIZED"`, `"CAPTURED"`, `"ABORTED"` osv. (slået op i deres
+webhook-dokumentation, ikke gættet). Intet matchede, så ruten svarede 200
+uden at gøre noget — stille, uden fejl, netop derfor svært at opdage.
+
+- **Rettet i `app/api/mobilepay/webhook/route.ts` og
+  `lib/betaling/regler.ts`**, testene opdateret til de rigtige navne.
+  Navnene i `scripts/mobilepay-webhook.mjs` (de lange) er korrekte og
+  uændrede — de bruges kun ved registreringen.
+- **Det her var præcis det uprøvede stykke**, "Ikke testet mod en rigtig
+  MobilePay-konto" ovenfor advarede om: ren logik og signatur kunne
+  testes, men ikke hvad MobilePay faktisk sender.
+- **To webhook-registreringer til samme adresse** opstod ved en fejl under
+  opsætningen (scriptet kørt to gange) og blev ryddet op: kun én må findes
+  pr. miljø, ellers får hver besked to forskellige signaturer. Kør kun
+  `npm run mobilepay:webhook` én gang pr. miljø.

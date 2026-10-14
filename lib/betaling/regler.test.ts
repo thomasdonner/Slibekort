@@ -33,27 +33,27 @@ describe("erMuligDobbeltbetaling", () => {
 
 describe("statusForAfvistHaendelse", () => {
   it("afvist ved aborted", () => {
-    expect(statusForAfvistHaendelse("epayments.payment.aborted.v1")).toBe("afvist");
+    expect(statusForAfvistHaendelse("ABORTED")).toBe("afvist");
   });
 
   it("udloebet ved expired", () => {
-    expect(statusForAfvistHaendelse("epayments.payment.expired.v1")).toBe(
+    expect(statusForAfvistHaendelse("EXPIRED")).toBe(
       "udloebet",
     );
   });
 
   it("annulleret ved cancelled og terminated", () => {
-    expect(statusForAfvistHaendelse("epayments.payment.cancelled.v1")).toBe(
+    expect(statusForAfvistHaendelse("CANCELLED")).toBe(
       "annulleret",
     );
-    expect(statusForAfvistHaendelse("epayments.payment.terminated.v1")).toBe(
+    expect(statusForAfvistHaendelse("TERMINATED")).toBe(
       "annulleret",
     );
   });
 
   it("null for hændelser der håndteres andre steder", () => {
-    expect(statusForAfvistHaendelse("epayments.payment.authorized.v1")).toBeNull();
-    expect(statusForAfvistHaendelse("epayments.payment.captured.v1")).toBeNull();
-    expect(statusForAfvistHaendelse("epayments.payment.created.v1")).toBeNull();
+    expect(statusForAfvistHaendelse("AUTHORIZED")).toBeNull();
+    expect(statusForAfvistHaendelse("CAPTURED")).toBeNull();
+    expect(statusForAfvistHaendelse("CREATED")).toBeNull();
   });
 });

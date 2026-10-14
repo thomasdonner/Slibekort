@@ -6,6 +6,8 @@ import { indfrielseBetaling } from "@/lib/mobilepay/klient";
 import { erMuligDobbeltbetaling, statusForAfvistHaendelse } from "@/lib/betaling/regler";
 import { sendKvitteringMail } from "@/lib/mails/send";
 
+// `name` er hændelsens korte, store-bogstavs-navn ("AUTHORIZED",
+// "CAPTURED" …) — se kommentaren i lib/betaling/regler.ts.
 type MobilePayHaendelse = {
   reference: string;
   name: string;
@@ -45,7 +47,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  if (haendelse.name === "epayments.payment.authorized.v1") {
+  if (haendelse.name === "AUTHORIZED") {
     await prisma.betaling.update({
       where: { id: betaling.id },
       data: { status: "godkendt" },
@@ -60,7 +62,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  if (haendelse.name === "epayments.payment.captured.v1") {
+  if (haendelse.name === "CAPTURED") {
     const resultat = await prisma.$transaction(async (tx) => {
       // Kravspecifikationen, afsnit 9: "Saldoen ændres først, når
       // webhooken er modtaget og verificeret." where-betingelsen her er
