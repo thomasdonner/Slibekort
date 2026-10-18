@@ -539,6 +539,12 @@ td {
   vertical-align: top;
 }
 
+/* Sumrækken nederst i fx slibestatistikken */
+tr.sum-raekke td {
+  font-weight: 600;
+  border-top: 2px solid var(--tekst-svag);
+}
+
 tbody tr {
   transition: background var(--overgang);
 }

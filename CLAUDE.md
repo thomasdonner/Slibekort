@@ -1503,3 +1503,49 @@ uden at gøre noget — stille, uden fejl, netop derfor svært at opdage.
   opsætningen (scriptet kørt to gange) og blev ryddet op: kun én må findes
   pr. miljø, ellers får hver besked to forskellige signaturer. Kør kun
   `npm run mobilepay:webhook` én gang pr. miljø.
+
+## Beslutninger undervejs — slibestatistik til prisfastsættelse
+
+Ønske: kunne trække, hvor mange slibninger der er foretaget pr. hold og
+samlet for klubben, som grundlag for næste sæsons priser.
+
+- **Ny side `/overblik/statistik` plus Excel-download**
+  (`/api/overblik/statistik`, to ark: "Pr. hold" og "Pr. måned"). Kun
+  kasserer og administrator, samme `kanRetteSaldi`-gating som
+  saldorapporten, og selv adgangsstyret i API-ruten uafhængigt af siden.
+  Afprøvet med en holdleder-konto: 403 fra ruten, omdirigering fra siden.
+- **Regnereglerne er rene funktioner** (`lib/overblik/statistik.ts`,
+  testet i `statistik.test.ts`), opslaget ligger for sig
+  (`statistik-data.ts`), og både siden og Excel-filen bruger det samme
+  opslag, så de aldrig kan vise forskellige tal.
+- **En slibning er en `slibning`-bevægelse uden en `fortrudt`-række, der
+  peger på sig.** Fortrudte slibninger tælles ikke (de blev aldrig slebet),
+  og `rettelse` (kassererens manuelle saldorettelser) er ikke slibninger.
+- **Sæsonen er 1. juli – 30. juni** (`saesonStartAar`; sæson 2026 vises som
+  2026/27). Måneder bestemmes efter dansk tid, ikke UTC, så en slibning
+  sent på den sidste dag i en måned tæller i den måned, sliberen så
+  (testet for 30. juni → 1. juli).
+- **"Hold" er spillerens hold i dag.** En spiller, der rykker op, tæller
+  med under det nye hold for hele sæsonen — systemet gemmer ikke, hvilket
+  hold en spiller var på, da slibningen blev foretaget. Accepteret: for
+  prisfastsættelse er klubtotalen og gennemsnittet pr. spiller det vigtige,
+  ikke præcis hvilket hold en slibning hørte til dengang. Står også
+  forklaret på selve siden.
+- **To gennemsnit, ikke ét.** "Pr. spiller" (delt med aktive spillere på
+  holdet) og "pr. spiller der har slebet" (delt med dem, der har fået
+  slebet mindst én gang) — det andet viser, hvor meget de aktive reelt
+  bruger tilbuddet, det første, hvor meget en spiller i gennemsnit
+  trækker. En stoppet spillers slibninger tæller med i holdets
+  slibninger, men spilleren tæller ikke som aktiv.
+- **Solgt og omsætning kommer fra gennemførte `betalinger`**, ikke fra
+  `koeb`-bevægelser. Gns. pris pr. solgt slibning ligger derfor mellem 30
+  kr. (10 for 300) og 40 kr. (enkeltkøb) — det viser direkte, hvor mange
+  der køber enkeltvis frem for opfyldning.
+- **Engangsslibning er sin egen række**, uden spillertal (den er én delt
+  række, ikke et hold) og sidst i listen. Den tæller med i totalens
+  slibninger, solgt og omsætning, men ikke i "pr. spiller" — ellers ville
+  gennemsnittet blive trukket ned af en række uden et antal spillere.
+- **Gennemsnit vises med to decimaler**, ikke én: tidligt i en sæson er de
+  små (1 slibning på 21 spillere), og ét decimal ville vise dem som 0,0.
+- **"Saldo i dag" er ikke begrænset til sæsonen** — det er ubrugte,
+  betalte slibninger lige nu (en forpligtelse), ikke aktivitet i perioden.

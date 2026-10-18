@@ -219,6 +219,11 @@ export default async function OverblikSide({
             <IkonRapport /> Download saldorapport
           </Link>
         )}
+        {kanRetteSaldi(adgang.adgang) && (
+          <Link href="/overblik/statistik">
+            <IkonRapport /> Slibestatistik
+          </Link>
+        )}
         {engangsslibning && (
           <Link href={`/overblik/spillere/${engangsslibning.id}`}>
             <IkonBillet /> Engangsslibning
