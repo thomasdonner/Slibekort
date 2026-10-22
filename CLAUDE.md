@@ -209,9 +209,12 @@ dokumentation.
   kedeligste løsning. Hver handling tjekker selv adgang og hold — en
   Server Action er sit eget endpoint, uanset hvilken side der viser
   knappen, så det er ikke nok at siden er gated af layoutet.
-- **Kun kasserer og administrator retter saldi**, ikke holdleder (afsnit
-  4). Holdleder ser sit holds saldi og kan rette voksnes kontaktoplysninger
-  for spillere på egne hold, intet andet.
+- **Kasserer og administrator retter saldi på alle hold.** Holdleder
+  kan nu også rette saldi, men kun for spillere på egne hold — se
+  "Beslutninger undervejs — holdleder kan rette saldi og skøjtenote"
+  længere nede (ændret efter ønske, afsnit 4 var oprindeligt "holdleder
+  kan ikke rette saldi"). Holdleder kan stadig ikke andet end det, der
+  står der.
 - **Søskende-saldooverførsel er to `rettelse`-bevægelser i én
   transaktion** (træk hos den stoppende spiller, tilførsel hos søskendet),
   ikke en særskilt bevægelsestype. Søskende findes ved at slå relationer op
@@ -1549,3 +1552,75 @@ samlet for klubben, som grundlag for næste sæsons priser.
   små (1 slibning på 21 spillere), og ét decimal ville vise dem som 0,0.
 - **"Saldo i dag" er ikke begrænset til sæsonen** — det er ubrugte,
   betalte slibninger lige nu (en forpligtelse), ikke aktivitet i perioden.
+
+## Beslutninger undervejs — holdleder kan rette saldi og skøjtenote
+
+Ønske: holdlederen skal kunne rette den enkelte spillers antal slibninger,
+og der skal være en notatboks pr. spiller til hulningen på skøjten, så
+sliberen ved, hvad skøjten skal slibes på. Det første ændrer afsnit 4
+("Rette saldi" stod under det holdlederen ikke kan) — en bevidst
+afvigelse efter udtrykkeligt ønske, ikke en fejlrettelse. Kravspecifikationens
+rolletabel er rettet tilsvarende.
+
+**Holdleder retter saldi — kun på egne hold, og ikke andet:**
+- **Ny tilladelse `kanRetteSaldoForHold(adgang, hold)`** (`lib/roller.ts`,
+  testet i `roller.test.ts`): kasserer/administrator kan alle hold, en
+  holdleder kun et hold, kontoen er tildelt. Holdleder blev med vilje
+  *ikke* lagt ind i `KAN_RETTE_SALDI_ROLLER` — den liste styrer også
+  import, rapporter, statistik, "Markér som set" og at stoppe en spiller,
+  og de skal stadig kun være for kasserer/administrator. `kanRetteSaldi`
+  er uændret falsk for holdleder (testet).
+- **`rettSaldo` slår spillerens hold op først** og tjekker derefter
+  `kanRetteSaldoForHold` — adgangen afhænger af holdet, så en holdleder,
+  der rammer en spiller på et andet hold, får samme afvisning som ved en
+  ukendt spiller. Rettelsen er stadig en ny `rettelse`-bevægelse (aldrig
+  en ændring af noget eksisterende) med `udfoertAf` sat til holdlederen,
+  så historikken viser, hvem der rettede.
+- **"Ret saldo" er løftet ud af kasserer-blokken** på spillersiden og
+  vises for holdleder på egne spillere; "Påmindelse", "QR-kode" og
+  "Spilleren stopper" er som før kun for kasserer/administrator.
+- **En rettelse kan som altid udløse en påmindelsesmail** (retter en
+  holdleder en saldo til 1, sendes advarslen til forældrene, samme regler
+  og 48-timersgrænse som ved en kasserers rettelse). Og hver rettelse har
+  en note, så den vises i kassererens "Bevægelser der kræver et kig" —
+  kassereren kan altså se, hvad holdlederne retter.
+
+**Skøjtenote (hulning):**
+- **Nyt valgfrit felt `Spiller.skoejteNote`** (migration
+  `tilfoej_skoejtenote`, én nullbar kolonne — ingen eksisterende data
+  berørt). Fri tekst, højst 500 tegn, en tom note gemmes som `null`
+  (`lib/skoejte-note.ts`, testet). Samme regler både i overblikkets
+  Server Action (`gemSkoejteNote`) og i sliberens API-rute, så de to veje
+  ind ikke kan tillade forskellige ting. Import rører ikke feltet (den
+  opdaterer kun `aktiv`/`hold`), så en gentaget import sletter ingen noter.
+- **Vises stort øverst på sliberens bekræftelsesskærm** (`SkoejteNoteBoks`
+  i `app/slib/slib-klient.tsx`) — det er det, man kigger efter ved
+  maskinen — og kan rettes direkte dér via `/api/slib/note`. Rettes den
+  ikke dér, ville den aldrig blive vedligeholdt: sliberen er den, der ved,
+  hvad der blev slebet, og har ikke adgang til overblikket.
+- **Kan også rettes i overblikket** (kasserer/administrator på alle hold,
+  holdleder på egne, `kanSeHold`) på spillerens side, i sektionen
+  "Skøjtenote".
+- **Gemmes i telefonens cache** (`RosterPost.skoejteNote`, uden
+  `DB_VERSION`-ændring, da feltet ikke er indekseret), så noten også
+  vises uden forbindelse, sidst kendte version. `synkroniserKoe` bærer
+  noten med, fordi den skriver hele cache-posten om (en `put`) — ellers
+  ville den blive slettet, hver gang en slibning nåede frem til serveren.
+- **Kun at gemme en note kræver forbindelse** — den lægges ikke i
+  offline-køen som en slibning. En note, der ankommer sent, kunne
+  overskrive en nyere, en anden sliber imens har skrevet; hellere en
+  tydelig fejl ("Ingen forbindelse — noten blev ikke gemt") end en stille
+  overskrivning.
+- **Kun noget om skøjten, aldrig personoplysninger** — står i skemaet ved
+  feltet. Hulning er udstyr, ikke noget fra "Data vi aldrig gemmer"-listen.
+- **Ny `textarea`-stil** i `app/globals.css`, samme udseende som de
+  øvrige felter (de er skrevet som `input[type="text"]` osv., så et
+  `<textarea>` faldt ellers helt udenfor, jf. `type="text"`-fejlen
+  tidligere).
+- **Verificeret mod den rigtige database med en midlertidig testspiller**
+  (oprettet og slettet igen, så ingen rigtig spillers historik fik
+  testrækker): holdleder på U14 kunne rette saldoen og gemme noten og så
+  kun de rigtige sektioner; sliberen så noten stort på bekræftelsesskærmen
+  og kunne rette den, og ændringen stod i databasen. Ikke afprøvet:
+  visningen af noten *uden* forbindelse, og at gemme med forbindelsen
+  afbrudt (begge dele er enkel kode, men ikke set køre).

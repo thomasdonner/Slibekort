@@ -1,11 +1,13 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { kraevOverblikAdgang } from "@/lib/kraev-overblik-adgang";
-import { kanRetteSaldi, kanSeHold } from "@/lib/roller";
+import { kanRetteSaldi, kanRetteSaldoForHold, kanSeHold } from "@/lib/roller";
+import { MAKS_SKOEJTE_NOTE_LAENGE } from "@/lib/skoejte-note";
 import { beregnSaldo } from "@/lib/saldo";
 import { saldoKlasse } from "@/lib/ui/saldo-klasse";
 import { findSoskendeIds } from "@/lib/overblik/soskende";
 import {
+  gemSkoejteNote,
   markerStoppet,
   opdaterVoksenKontakt,
   rettSaldo,
@@ -45,6 +47,9 @@ export default async function SpillerSide({
 
   const saldo = beregnSaldo(spiller.bevaegelser);
   const kanRette = kanRetteSaldi(adgang.adgang);
+  // Holdleder må rette saldoen for sit eget holds spillere, men ikke
+  // resten af det kasserer/administrator kan (kanRette ovenfor).
+  const kanRetteSaldoHer = kanRetteSaldoForHold(adgang.adgang, spiller.hold);
 
   let soskende: { id: string; navn: string }[] = [];
   if (kanRette && saldo !== 0) {
@@ -104,24 +109,48 @@ export default async function SpillerSide({
         ))}
       </section>
 
+      <section>
+        <h2>Skøjtenote</h2>
+        <p>
+          Spillerens hulning på skøjten, så man ved, hvad skøjten skal slibes
+          på. Vises for sliberen, når spilleren scannes.
+        </p>
+        <form action={gemSkoejteNote}>
+          <input type="hidden" name="spillerId" value={spiller.id} />
+          <label>
+            Hulning / note
+            <textarea
+              name="skoejteNote"
+              rows={3}
+              maxLength={MAKS_SKOEJTE_NOTE_LAENGE}
+              defaultValue={spiller.skoejteNote ?? ""}
+              placeholder="Fx 1/2 tomme"
+            />
+          </label>
+          <button type="submit">Gem note</button>
+        </form>
+      </section>
+
+      {kanRetteSaldoHer && spiller.aktiv && (
+        <section>
+          <h2>Ret saldo</h2>
+          <form action={rettSaldo}>
+            <input type="hidden" name="spillerId" value={spiller.id} />
+            <label>
+              Antal (negativt trækker, positivt lægger til)
+              <input type="number" name="antal" required />
+            </label>
+            <label>
+              Note
+              <input type="text" name="note" placeholder="Hvorfor?" />
+            </label>
+            <button type="submit">Ret saldo</button>
+          </form>
+        </section>
+      )}
+
       {kanRette && spiller.aktiv && (
         <>
-          <section>
-            <h2>Ret saldo</h2>
-            <form action={rettSaldo}>
-              <input type="hidden" name="spillerId" value={spiller.id} />
-              <label>
-                Antal (negativt trækker, positivt lægger til)
-                <input type="number" name="antal" required />
-              </label>
-              <label>
-                Note
-                <input type="text" name="note" placeholder="Hvorfor?" />
-              </label>
-              <button type="submit">Ret saldo</button>
-            </form>
-          </section>
-
           <section>
             <h2>Påmindelse</h2>
             <p>

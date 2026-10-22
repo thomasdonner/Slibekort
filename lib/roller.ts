@@ -32,6 +32,18 @@ export function kanRetteSaldi(adgang: BrugerAdgang): boolean {
   return harEnAfRollerne(adgang, KAN_RETTE_SALDI_ROLLER);
 }
 
+/**
+ * Må brugeren rette en bestemt spillers saldo? Kasserer og administrator
+ * kan rette alle. En holdleder kan kun rette spillere på sine egne hold —
+ * og intet andet: de øvrige ting kasserer/administrator kan (import,
+ * rapporter, statistik, stoppe en spiller) følger stadig `kanRetteSaldi`,
+ * som holdlederen med vilje ikke opfylder.
+ */
+export function kanRetteSaldoForHold(adgang: BrugerAdgang, hold: string): boolean {
+  if (kanRetteSaldi(adgang)) return true;
+  return adgang.roller.includes("holdleder") && adgang.hold.includes(hold);
+}
+
 export function kanAdministrereBrugere(adgang: BrugerAdgang): boolean {
   return harEnAfRollerne(adgang, KAN_ADMINISTRERE_BRUGERE_ROLLER);
 }

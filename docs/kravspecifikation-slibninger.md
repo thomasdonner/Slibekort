@@ -61,9 +61,9 @@ som oprindeligt), på samme side som den almindelige opfyldning
 
 | Rolle | Kan | Kan ikke |
 |---|---|---|
-| **Skøjtesliber** | Scanne, trække en slibning, fortryde inden for 10 sek., se en spillers saldo | Rette saldi, se mails, se kontaktoplysninger ud over fornavne |
+| **Skøjtesliber** | Scanne, trække en slibning, fortryde inden for 10 sek., se en spillers saldo, se og rette spillerens skøjtenote (hulning) | Rette saldi, se mails, se kontaktoplysninger ud over fornavne |
 | **Kasserer** | Alt i overblikket: rette saldi, sende påmindelser, trække rapporter | Ændre systemets opsætning |
-| **Holdleder** | Se sit eget holds saldi, rette forældreoplysninger på eget hold | Rette saldi, se andre hold |
+| **Holdleder** | Se sit eget holds saldi, rette saldi for spillere på eget hold, rette forældreoplysninger og skøjtenote på eget hold | Rette saldi på andre hold, importere hold, trække rapporter og statistik, se andre hold |
 | **Forælder** | Se sit barns saldo og historik, købe opfyldning, rette egen mailadresse | Se andre spillere |
 | **Administrator** | Alt, inklusive brugeradgang og opsætning | — |
 
@@ -325,7 +325,7 @@ Besluttet af bestyrelsen. Indarbejdet i afsnittene ovenfor.
 2. **Overførsel mellem sæsoner:** ubrugte slibninger følger med til næste sæson.
 3. **Transaktionsgebyr:** bæres af klubben.
 4. **Fuld adgang:** kassereren og web-administratoren.
-5. **Holdledere:** får adgang til eget hold og kan rette forældreoplysninger på det hold.
+5. **Holdledere:** får adgang til eget hold og kan rette forældreoplysninger og saldi på det hold.
 6. **Laveste saldo:** −2 slibninger.
 7. **Søskende:** stopper et barn med ubrugte slibninger, kan saldoen flyttes til en søskende i klubben.
 

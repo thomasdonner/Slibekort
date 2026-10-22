@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   kanAdministrereBrugere,
   kanRetteSaldi,
+  kanRetteSaldoForHold,
   kanSeAlleHold,
   kanSeHold,
   type BrugerAdgang,
@@ -43,6 +44,33 @@ describe("kanRetteSaldi", () => {
   });
 
   it("holdleder kan ikke rette saldi", () => {
+    expect(kanRetteSaldi({ roller: ["holdleder"], hold: ["U14"] })).toBe(false);
+  });
+});
+
+describe("kanRetteSaldoForHold", () => {
+  it("kasserer og administrator kan rette en spiller på ethvert hold", () => {
+    expect(kanRetteSaldoForHold({ roller: ["kasserer"], hold: [] }, "U14")).toBe(true);
+    expect(kanRetteSaldoForHold({ roller: ["administrator"], hold: [] }, "U16")).toBe(true);
+  });
+
+  it("holdleder kan rette en spiller på sit eget hold", () => {
+    expect(kanRetteSaldoForHold({ roller: ["holdleder"], hold: ["U14"] }, "U14")).toBe(true);
+  });
+
+  it("holdleder kan ikke rette en spiller på et andet hold", () => {
+    expect(kanRetteSaldoForHold({ roller: ["holdleder"], hold: ["U14"] }, "U16")).toBe(false);
+  });
+
+  it("holdleder uden tildelte hold kan ikke rette nogen", () => {
+    expect(kanRetteSaldoForHold({ roller: ["holdleder"], hold: [] }, "U14")).toBe(false);
+  });
+
+  it("en sliber med hold på kontoen men uden holdlederrollen kan ikke rette", () => {
+    expect(kanRetteSaldoForHold({ roller: ["sliber"], hold: ["U14"] }, "U14")).toBe(false);
+  });
+
+  it("giver holdleder ikke de øvrige rettigheder: kanRetteSaldi er uændret falsk", () => {
     expect(kanRetteSaldi({ roller: ["holdleder"], hold: ["U14"] })).toBe(false);
   });
 });

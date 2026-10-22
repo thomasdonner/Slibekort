@@ -14,6 +14,10 @@ model Spiller {
   qrToken  String   @unique @default(cuid())
   aktiv    Boolean  @default(true)
   oprettet DateTime @default(now())
+  // Fri tekst til sliberen: spillerens hulning på skøjten, så man ved,
+  // hvad der skal slibes på. Rettes både fra overblikket og fra selve
+  // sliberskærmen. Aldrig personoplysninger — kun noget om skøjten.
+  skoejteNote String?
 
   relationer  Relation[]
   bevaegelser Bevaegelse[]

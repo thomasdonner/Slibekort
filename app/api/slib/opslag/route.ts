@@ -37,6 +37,7 @@ export async function POST(request: Request) {
     spillerId: spiller.id,
     navn: spiller.navn,
     hold: spiller.hold,
+    skoejteNote: spiller.skoejteNote,
     saldo: beregnSaldo(spiller.bevaegelser),
     spaerret: erIndenforSpaerretid(sidsteSlibning?.tidspunkt ?? null, new Date()),
     sidsteSlibningTidspunkt: sidsteSlibning?.tidspunkt ?? null,

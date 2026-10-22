@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import jsQR from "jsqr";
 import {
   fortrydSlibning,
+  gemSkoejteNote,
   hentSpillerTilBekraeftelse,
   synkroniserKoe,
   traekSlibning,
@@ -132,6 +133,21 @@ export default function SlibKlient({ delt }: { delt: boolean }) {
     setSkaerm({ navn: "scanner" });
   }
 
+  // Returnerer en fejltekst, eller null når noten er gemt — komponenten
+  // under viser selv fejlen ved siden af feltet.
+  async function gemNote(note: string): Promise<string | null> {
+    if (skaerm.navn !== "bekraeft") return "Ingen spiller valgt.";
+    const { data } = skaerm;
+    const resultat = await gemSkoejteNote({
+      qrToken: data.qrToken,
+      spillerId: data.spillerId,
+      note,
+    });
+    if (!resultat.ok) return resultat.fejl;
+    setSkaerm({ navn: "bekraeft", data: { ...data, skoejteNote: resultat.note } });
+    return null;
+  }
+
   function tilbageTilScanner() {
     setSkaerm({ navn: "scanner" });
   }
@@ -180,6 +196,7 @@ export default function SlibKlient({ delt }: { delt: boolean }) {
             setNavnFejl(null);
           }}
           navnFejl={navnFejl}
+          onGemNote={gemNote}
           onTraek={() => traek(false)}
           onTraekAlligevel={() => traek(true)}
           onForkertSpiller={tilbageTilScanner}
@@ -434,12 +451,99 @@ function VaelgSpiller({ onValgt }: { onValgt: (qrToken: string) => void }) {
   );
 }
 
+// Spillerens hulning på skøjten — det sliberen skal vide, før der slibes.
+// Står øverst og er stor, fordi det er det, man kigger efter ved
+// maskinen. Kan rettes direkte her, da det er sliberen, der ved, hvad der
+// blev slebet.
+function SkoejteNoteBoks({
+  note,
+  onGem,
+}: {
+  note: string | null;
+  onGem: (note: string) => Promise<string | null>;
+}) {
+  const [redigerer, setRedigerer] = useState(false);
+  const [tekst, setTekst] = useState(note ?? "");
+  const [fejl, setFejl] = useState<string | null>(null);
+  const [gemmer, setGemmer] = useState(false);
+
+  async function gem() {
+    setGemmer(true);
+    const resultat = await onGem(tekst);
+    setGemmer(false);
+    if (resultat) {
+      setFejl(resultat);
+      return;
+    }
+    setFejl(null);
+    setRedigerer(false);
+  }
+
+  if (!redigerer) {
+    return (
+      <div className="skoejte-note">
+        <span className="skoejte-note-label">Skøjtenote (hulning)</span>
+        <p className={note ? "skoejte-note-tekst" : "skoejte-note-tekst skoejte-note-tom"}>
+          {note ?? "Ingen hulning noteret"}
+        </p>
+        <button
+          type="button"
+          className="knap-rolig"
+          onClick={() => {
+            setTekst(note ?? "");
+            setRedigerer(true);
+          }}
+        >
+          {note ? "Ret note" : "Tilføj note"}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="skoejte-note">
+      <label>
+        Skøjtenote (hulning)
+        <textarea
+          value={tekst}
+          onChange={(event) => setTekst(event.target.value)}
+          rows={3}
+          maxLength={500}
+          placeholder="Fx 1/2 tomme"
+        />
+      </label>
+      {fejl && (
+        <p role="alert">
+          <IkonAdvarsel />
+          <span>{fejl}</span>
+        </p>
+      )}
+      <div className="skoejte-note-knapper">
+        <button type="button" onClick={gem} disabled={gemmer}>
+          {gemmer ? "Gemmer …" : "Gem note"}
+        </button>
+        <button
+          type="button"
+          className="knap-rolig"
+          onClick={() => {
+            setFejl(null);
+            setRedigerer(false);
+          }}
+        >
+          Annuller
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function Bekraeftelsesskaerm({
   data,
   delt,
   udfoertAfNavn,
   onUdfoertAfNavnAendret,
   navnFejl,
+  onGemNote,
   onTraek,
   onTraekAlligevel,
   onForkertSpiller,
@@ -449,6 +553,7 @@ function Bekraeftelsesskaerm({
   udfoertAfNavn: string;
   onUdfoertAfNavnAendret: (vaerdi: string) => void;
   navnFejl: string | null;
+  onGemNote: (note: string) => Promise<string | null>;
   onTraek: () => void;
   onTraekAlligevel: () => void;
   onForkertSpiller: () => void;
@@ -464,6 +569,7 @@ function Bekraeftelsesskaerm({
       {data.fraCache && (
         <p>Ingen forbindelse lige nu — viser sidst kendte saldo.</p>
       )}
+      <SkoejteNoteBoks key={data.spillerId} note={data.skoejteNote} onGem={onGemNote} />
       {delt && (
         <label className="udfoert-af-navn-felt">
           Dit navn

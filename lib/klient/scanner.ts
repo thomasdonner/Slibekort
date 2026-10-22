@@ -18,6 +18,7 @@ export type Bekraeftelse = {
   saldo: number;
   spaerret: boolean;
   sidsteSlibningTidspunkt: string | null;
+  skoejteNote: string | null;
   fraCache: boolean;
 };
 
@@ -47,6 +48,7 @@ export async function hentSpillerTilBekraeftelse(
         hold: data.hold,
         saldo: data.saldo,
         sidsteSlibningTidspunkt: data.sidsteSlibningTidspunkt,
+        skoejteNote: data.skoejteNote ?? null,
         hentetTidspunkt: new Date().toISOString(),
       });
       return {
@@ -57,6 +59,7 @@ export async function hentSpillerTilBekraeftelse(
         saldo: data.saldo,
         spaerret: data.spaerret,
         sidsteSlibningTidspunkt: data.sidsteSlibningTidspunkt,
+        skoejteNote: data.skoejteNote ?? null,
         fraCache: false,
       };
     }
@@ -105,6 +108,7 @@ export async function hentSpillerTilBekraeftelse(
     saldo,
     spaerret: erIndenforSpaerretid(sidsteSlibning, new Date()),
     sidsteSlibningTidspunkt: sidsteSlibning ? sidsteSlibning.toISOString() : null,
+    skoejteNote: cache.skoejteNote ?? null,
     fraCache: true,
   };
 }
@@ -225,6 +229,7 @@ export async function synkroniserKoe(): Promise<void> {
         hold: svar.hold,
         saldo: svar.saldo,
         sidsteSlibningTidspunkt: svar.sidsteSlibningTidspunkt,
+        skoejteNote: svar.skoejteNote,
         hentetTidspunkt: new Date().toISOString(),
       });
       await sletKoePost(post.klientId);
@@ -251,6 +256,7 @@ type SendSvar =
       navn: string;
       hold: string;
       sidsteSlibningTidspunkt: string | null;
+      skoejteNote: string | null;
     };
 
 async function sendKoePost(post: KoePost): Promise<SendSvar> {
@@ -304,5 +310,41 @@ async function genopslag(
     navn: opslag.navn,
     hold: opslag.hold,
     sidsteSlibningTidspunkt: opslag.sidsteSlibningTidspunkt,
+    skoejteNote: opslag.skoejteNote ?? null,
   };
+}
+
+/**
+ * Gemmer spillerens hulning/note på serveren og opdaterer telefonens
+ * cache med det samme. Kræver forbindelse — i modsætning til en slibning
+ * lægges den ikke i køen, for en note der ankommer senere kunne
+ * overskrive en nyere, som en anden sliber imens har skrevet.
+ */
+export async function gemSkoejteNote(params: {
+  qrToken: string;
+  spillerId: string;
+  note: string;
+}): Promise<{ ok: true; note: string | null } | { ok: false; fejl: string }> {
+  let res: Response;
+  try {
+    res = await fetch("/api/slib/note", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ spillerId: params.spillerId, note: params.note }),
+    });
+  } catch {
+    return { ok: false, fejl: "Ingen forbindelse — noten blev ikke gemt." };
+  }
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    return { ok: false, fejl: data?.fejl ?? "Noten kunne ikke gemmes." };
+  }
+
+  const { skoejteNote } = (await res.json()) as { skoejteNote: string | null };
+  const cache = await hentRosterPost(params.qrToken);
+  if (cache) {
+    await gemRosterPost({ ...cache, skoejteNote });
+  }
+  return { ok: true, note: skoejteNote };
 }

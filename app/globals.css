@@ -345,6 +345,7 @@ input[type="text"],
 input[type="email"],
 input[type="number"],
 input[type="file"],
+textarea,
 select {
   font: inherit;
   color: var(--tekst);
@@ -359,6 +360,7 @@ select {
 input[type="text"]:hover,
 input[type="email"]:hover,
 input[type="number"]:hover,
+textarea:hover,
 select:hover {
   border-color: #c7c7c7;
 }
@@ -369,6 +371,7 @@ input[type="checkbox"] {
 }
 
 input:focus-visible,
+textarea:focus-visible,
 select:focus-visible,
 button:focus-visible,
 a:focus-visible {
@@ -378,6 +381,7 @@ a:focus-visible {
 
 @media (prefers-color-scheme: dark) {
   input:focus-visible,
+  textarea:focus-visible,
   select:focus-visible,
   button:focus-visible,
   a:focus-visible {
@@ -979,4 +983,56 @@ th {
 .udfoert-af-navn-felt input {
   font-size: 1.15rem;
   padding: 0.85rem 1rem;
+}
+
+/* Flere linjer tekst, fx skøjtenoten — samme udseende som øvrige felter
+   (se ovenfor), men må trækkes højere og har ikke en fast mindstehøjde på
+   ét felts højde. */
+textarea {
+  resize: vertical;
+  width: 100%;
+  min-height: 88px;
+}
+
+/* Spillerens hulning på sliberens bekræftelsesskærm: det man leder efter
+   ved maskinen, derfor stor skrift og en farvet kant i siden. */
+.skoejte-note {
+  background: var(--flade);
+  border: 1px solid var(--kant);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius-lille);
+  padding: 0.85rem 1rem;
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.skoejte-note-label {
+  font-size: 0.74rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tekst-svag);
+}
+
+.skoejte-note-tekst {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+}
+
+.skoejte-note-tom {
+  font-size: 1rem;
+  font-weight: 400;
+  color: var(--tekst-svag);
+}
+
+.skoejte-note-knapper {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }

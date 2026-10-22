@@ -5,7 +5,8 @@ import { after } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { kraevOverblikAdgang } from "@/lib/kraev-overblik-adgang";
-import { kanRetteSaldi, kanSeHold } from "@/lib/roller";
+import { kanRetteSaldi, kanRetteSaldoForHold, kanSeHold } from "@/lib/roller";
+import { rensSkoejteNote } from "@/lib/skoejte-note";
 import { beregnSaldo } from "@/lib/saldo";
 import { tjekOgSendPaamindelser } from "@/lib/mails/send";
 
@@ -28,7 +29,7 @@ async function hentSpillerEllerFejl(spillerId: string) {
 
 export async function rettSaldo(formData: FormData) {
   const adgang = await kraevOverblikAdgang();
-  if (!adgang.ok || !kanRetteSaldi(adgang.adgang)) {
+  if (!adgang.ok) {
     throw new Error("Ingen adgang til at rette saldi.");
   }
 
@@ -40,9 +41,13 @@ export async function rettSaldo(formData: FormData) {
     throw new Error("Antal skal være et heltal forskelligt fra 0.");
   }
 
+  // Kasserer og administrator kan rette alle; en holdleder kun spillere
+  // på sine egne hold. Spillerens hold slås op først, fordi adgangen
+  // afhænger af det — kan brugeren ikke rette netop denne spiller, svarer
+  // vi det samme uanset om spilleren findes eller ej.
   const spiller = await hentSpillerEllerFejl(spillerId);
-  if (!kanSeHold(adgang.adgang, spiller.hold)) {
-    throw new Error("Ingen adgang til det hold.");
+  if (!kanRetteSaldoForHold(adgang.adgang, spiller.hold)) {
+    throw new Error("Ingen adgang til at rette saldi for denne spiller.");
   }
 
   await prisma.bevaegelse.create({
@@ -59,6 +64,35 @@ export async function rettSaldo(formData: FormData) {
   planlaegPaamindelsestjek(spillerId);
   revalidatePath(`/overblik/spillere/${spillerId}`);
   revalidatePath("/overblik");
+}
+
+// Spillerens hulning på skøjten — fritekst, vist for sliberen ved
+// scanning. Alle, der kan se spilleren i overblikket, kan rette den
+// (kasserer/administrator: alle hold, holdleder: egne hold), da det er
+// praktisk viden om udstyr og ikke noget regnskabsmæssigt som saldoen.
+export async function gemSkoejteNote(formData: FormData) {
+  const adgang = await kraevOverblikAdgang();
+  if (!adgang.ok) {
+    throw new Error("Ingen adgang til at rette noten.");
+  }
+
+  const spillerId = String(formData.get("spillerId"));
+  const spiller = await hentSpillerEllerFejl(spillerId);
+  if (!kanSeHold(adgang.adgang, spiller.hold)) {
+    throw new Error("Ingen adgang til det hold.");
+  }
+
+  const renset = rensSkoejteNote(String(formData.get("skoejteNote") ?? ""));
+  if (!renset.ok) {
+    throw new Error(renset.fejl);
+  }
+
+  await prisma.spiller.update({
+    where: { id: spillerId },
+    data: { skoejteNote: renset.vaerdi },
+  });
+
+  revalidatePath(`/overblik/spillere/${spillerId}`);
 }
 
 // Fjerner én bevægelse fra "Bevægelser der kræver et kig" på /overblik,

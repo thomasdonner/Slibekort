@@ -11,6 +11,9 @@ export type RosterPost = {
   hold: string;
   saldo: number;
   sidsteSlibningTidspunkt: string | null;
+  // Valgfri: poster gemt før feltet fandtes mangler den. Ikke indekseret,
+  // så ingen DB_VERSION-ændring er nødvendig.
+  skoejteNote?: string | null;
   hentetTidspunkt: string;
 };
 
