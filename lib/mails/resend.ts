@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { byggAfsender } from "./afsender";
 
 /**
  * Tynd indpakning om Resend. Fejler aldrig ud af processen — en mail der
@@ -22,7 +23,11 @@ export async function sendMail(params: {
   try {
     const resend = new Resend(apiKey);
     await resend.emails.send({
-      from: fra,
+      from: byggAfsender(fra),
+      // Svar går til kassereren i stedet for til en adresse, ingen læser —
+      // teksten i mailen opfordrer jo netop til at skrive dertil, og en
+      // mail med en rigtig svaradresse ligner mindre en masseudsendelse.
+      replyTo: process.env.KASSERER_KONTAKT_EMAIL || undefined,
       to: params.til,
       subject: params.emne,
       text: params.tekst,

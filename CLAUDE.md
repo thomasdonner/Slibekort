@@ -1624,3 +1624,35 @@ rolletabel er rettet tilsvarende.
   og kunne rette den, og ændringen stod i databasen. Ikke afprøvet:
   visningen af noten *uden* forbindelse, og at gemme med forbindelsen
   afbrudt (begge dele er enkel kode, men ikke set køre).
+
+## Beslutninger undervejs — mails endte i spam
+
+Fejl: påmindelsesmails til forældre (bl.a. på Hotmail) endte i spam, så de
+ikke fik beskeden om opfyldning.
+
+**Hvad der blev undersøgt først:** mailopsætningen på `aaik.dk` (slået op
+via DNS, ikke gættet). Resends DKIM-nøgle (`resend._domainkey`) er sat,
+SPF for afsendelsen ligger på `send.aaik.dk`, og en DMARC-record findes
+(`p=none`, uden rapportadresse). Autentificeringen er altså ikke ødelagt —
+spam-placeringen skyldes afsenderens omdømme og mailens udseende, ikke en
+manglende record.
+
+- **Afsenderen får altid klubbens navn foran** (`lib/mails/afsender.ts`,
+  `byggAfsender`): `Aalborg Ishockey Klub <noreply@aaik.dk>` i stedet for
+  den bare adresse. En bar `noreply@…` uden navn rammes oftere af
+  spamfiltre (især Microsoft) og kan ikke genkendes i indbakken. Står der
+  allerede et navn i `RESEND_FROM`, bruges det uændret.
+- **`Reply-To` er `KASSERER_KONTAKT_EMAIL`** (`lib/mails/resend.ts`).
+  Mailen opfordrer allerede til at skrive til kassereren; en mail med en
+  rigtig svaradresse ligner mindre en masseudsendelse, og et svar havner
+  nu hos en, der kan læse det, i stedet for at forsvinde.
+- **Ikke løst af koden, og kan ikke løses af den:** et nyt afsenderdomæne
+  har ingen historik hos Microsoft/Gmail, og det bygges op ved, at
+  modtagere markerer mails som "ikke spam" og svarer. Se kassererens
+  tjekliste i samtalen: marker som ikke spam, tilføj afsenderen til
+  kontakter, og send et par hele mail-headere (Vis original) til
+  fejlfinding, hvis det fortsætter.
+- **Ikke gjort endnu:** DMARC-rapportering (`rua=`) til at se, hvem der
+  sender som `aaik.dk`, og en test mod et spam-scoringsværktøj. Begge kræver
+  enten en postkasse på one.com eller at sende en rigtig testmail ud af
+  huset, og er ikke noget, der er aftalt.
