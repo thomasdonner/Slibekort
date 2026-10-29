@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
@@ -7,6 +8,7 @@ import { betalingsUrl } from "@/lib/betaling/url";
 import { genererQrSvg } from "@/lib/qr/generer-svg";
 import { ENGANGSSLIBNING_HOLD } from "@/lib/spillere/engangsslibning";
 import { grupperEfterHulning } from "@/lib/qr/hulning-grupper";
+import { QR_ARK_CSS } from "./qr-ark-css";
 
 // Kravspecifikationen, afsnit 5.3: "Systemet danner en QR-kode. Holdlederen
 // printer arket og klipper koden ud til skøjteposen." Koden på arket er den
@@ -16,7 +18,11 @@ import { grupperEfterHulning } from "@/lib/qr/hulning-grupper";
 export default async function QrArkSide({
   searchParams,
 }: {
-  searchParams: Promise<{ hold?: string; spillerId?: string; gruppering?: string }>;
+  searchParams: Promise<{
+    hold?: string;
+    spillerId?: string;
+    gruppering?: string;
+  }>;
 }) {
   const { hold, spillerId, gruppering } = await searchParams;
 
@@ -26,7 +32,9 @@ export default async function QrArkSide({
   }
 
   if (spillerId) {
-    const spiller = await prisma.spiller.findUnique({ where: { id: spillerId } });
+    const spiller = await prisma.spiller.findUnique({
+      where: { id: spillerId },
+    });
     if (!spiller || !kanSeHold(adgang.adgang, spiller.hold)) {
       notFound();
     }
@@ -46,7 +54,10 @@ export default async function QrArkSide({
         overskrift={hold}
         spillere={spillere}
         holdTilValg={hold}
-        grupperetEfterHulning={gruppering === "hulning"}
+        grupperetEfterHulning={
+          gruppering === "hulning" || gruppering === "hulning-sider"
+        }
+        nySideForHverHulning={gruppering === "hulning-sider"}
       />
     );
   }
@@ -76,7 +87,9 @@ export default async function QrArkSide({
         <ul>
           {holdRaekker.map((h) => (
             <li key={h.hold}>
-              <Link href={`/overblik/qr-ark?hold=${encodeURIComponent(h.hold)}`}>
+              <Link
+                href={`/overblik/qr-ark?hold=${encodeURIComponent(h.hold)}`}
+              >
                 {h.hold}
               </Link>
             </li>
@@ -121,6 +134,7 @@ function QrArk({
   spillere,
   holdTilValg,
   grupperetEfterHulning = false,
+  nySideForHverHulning = false,
 }: {
   overskrift: string;
   spillere: QrSpiller[];
@@ -128,6 +142,7 @@ function QrArk({
   // alfabetisk visning og gruppering. Ikke relevant for ét enkelt kort.
   holdTilValg?: string;
   grupperetEfterHulning?: boolean;
+  nySideForHverHulning?: boolean;
 }) {
   const grupper = grupperetEfterHulning ? grupperEfterHulning(spillere) : [];
 
@@ -149,29 +164,56 @@ function QrArk({
             </Link>
             <Link
               href={`/overblik/qr-ark?hold=${encodeURIComponent(holdTilValg)}&gruppering=hulning`}
-              className={grupperetEfterHulning ? "aktiv" : undefined}
+              className={
+                grupperetEfterHulning && !nySideForHverHulning
+                  ? "aktiv"
+                  : undefined
+              }
             >
               Gruppér efter hulning
+            </Link>
+            <Link
+              href={`/overblik/qr-ark?hold=${encodeURIComponent(holdTilValg)}&gruppering=hulning-sider`}
+              className={nySideForHverHulning ? "aktiv" : undefined}
+            >
+              Gruppér — ny side for hver hulning
             </Link>
           </nav>
         )}
       </div>
 
       {spillere.length === 0 ? (
-        <p className="skjules-ved-print">Ingen aktive spillere på dette hold.</p>
+        <p className="skjules-ved-print">
+          Ingen aktive spillere på dette hold.
+        </p>
       ) : grupperetEfterHulning ? (
-        grupper.map((gruppe) => (
-          <section className="qr-gruppe" key={gruppe.noegle ?? "ingen"}>
-            <h2>
-              {gruppe.navn ?? "Ingen hulning noteret"} ({gruppe.spillere.length})
-            </h2>
-            <div className="qr-gitter">
-              {gruppe.spillere.map((s) => (
-                <QrKort key={s.id} spiller={s} />
-              ))}
-            </div>
-          </section>
-        ))
+        <div className="qr-grupper">
+          {grupper.map((gruppe) => (
+            <section
+              className={
+                nySideForHverHulning ? "qr-gruppe ny-side" : "qr-gruppe"
+              }
+              key={gruppe.noegle ?? "ingen"}
+              // Bruges kun af printreglerne (qr-ark-css.ts): så mange af
+              // arkets fire kolonner, som gruppen har spillere, højst fire.
+              style={
+                {
+                  "--kolonner": Math.min(gruppe.spillere.length, 4),
+                } as CSSProperties
+              }
+            >
+              <h2>
+                {gruppe.navn ?? "Ingen hulning noteret"} (
+                {gruppe.spillere.length})
+              </h2>
+              <div className="qr-gitter">
+                {gruppe.spillere.map((s) => (
+                  <QrKort key={s.id} spiller={s} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
       ) : (
         <div className="qr-gitter">
           {spillere.map((s) => (
@@ -180,48 +222,7 @@ function QrArk({
         </div>
       )}
 
-      <style>{`
-        .qr-gitter {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 1rem;
-        }
-        .qr-kort {
-          border: 1px dashed #999;
-          padding: 0.5rem;
-          text-align: center;
-          break-inside: avoid;
-        }
-        .qr-billede svg {
-          width: 100%;
-          height: auto;
-        }
-        .qr-note {
-          font-weight: 600;
-          font-size: 0.85rem;
-          white-space: pre-wrap;
-          overflow-wrap: anywhere;
-        }
-        .qr-gruppe {
-          break-inside: avoid-page;
-        }
-        .qr-gruppe h2 {
-          margin-top: 1.5rem;
-          font-size: 1.1rem;
-        }
-        @media print {
-          .skjules-ved-print {
-            display: none;
-          }
-          .qr-gruppe {
-            background: none;
-            border: none;
-            box-shadow: none;
-            padding: 0;
-            margin: 0 0 1rem;
-          }
-        }
-      `}</style>
+      <style>{QR_ARK_CSS}</style>
     </main>
   );
 }

@@ -1768,3 +1768,39 @@ ikke må ændres uden at spørge", efter udtrykkeligt ønske):
 - **Koden selv er uændret** — den indeholder stadig samme adresse
   (`${APP_URL}/betal/[qrToken]`), så alle QR-koder, der allerede er printet
   uden logo, virker fortsat. Kun nye print får logoet.
+
+## Beslutninger undervejs — QR-arket printer tættere og pænere
+
+Ønske: det grupperede QR-ark skulle kunne printes mere optimalt.
+
+Tjekket ved at lave en rigtig PDF af arket med Chrome i printtilstand
+(U14: 21 spillere, 9 hulningsgrupper) — ikke gættet ud fra skærmvisningen.
+Det viste tre ting: sidens sorte topbjælke kom med på papiret, indholdet
+var låst til sidens skærmbredde (760 px) med tre koder pr. række, og hver
+lille gruppe (mange har kun 1–2 spillere) startede på en ny række og
+efterlod resten af rækken tom — 21 koder fyldte **4 sider** i stedet for 2.
+
+- **Printreglerne ligger i `app/overblik/qr-ark/qr-ark-css.ts`**, ikke
+  længere inde i `page.tsx` (en Next-side må kun eksportere bestemte ting).
+  Topbjælke og stribe skjules ved print, siden fylder hele A4-bredden
+  (10 mm margin), og der er fire koder pr. række (ca. 4 cm brede — langt
+  over, hvad en telefon skal bruge). Skærmvisningen er uændret.
+- **Grupperne pakkes tæt:** hver gruppe fylder kun så mange af de fire
+  kolonner, som den har spillere (`--kolonner`, sat pr. gruppe i
+  `page.tsx`, højst 4). Fire grupper med hver én spiller ligger altså på
+  samme række, og en gruppe med mange spillere fylder hele bredden. Det er
+  rent CSS (grid + `span`), og rækkefølgen af hulninger bevares — ingen
+  omsortering for at fylde huller ("dense"), som ville blande rækkefølgen.
+  Resultat: **2 sider i stedet for 4**.
+- **En overskrift står aldrig alene nederst på en side** (`break-after:
+  avoid`), og en gruppe flyttes samlet til næste side, hvis den kan være
+  der (`break-inside: avoid`). Er en gruppe længere end en side, deler
+  browseren den alligevel.
+- **Nyt valg: "Gruppér — ny side for hver hulning"**
+  (`?gruppering=hulning-sider`): hver hulning starter på en ny side, så en
+  hel bunke kan gives til sliberen ad gangen. Giver 9 sider for U14, så det
+  er ikke standarden. Det almindelige "Gruppér efter hulning" er stadig
+  tætpakket, og "Alfabetisk" er uændret (også 2 sider for U14).
+- **Kun afprøvet i Chromes printtilstand.** Safari og Firefox bryder sider
+  lidt anderledes. Reglerne er almindelige CSS-regler for sideskift, men
+  ikke set i de browsere.
