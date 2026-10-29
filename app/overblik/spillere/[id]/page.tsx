@@ -13,6 +13,7 @@ import {
   opdaterVoksenKontakt,
   rettSaldo,
   sendPaamindelseNu,
+  tilfoejVoksen,
   udstedNyQr,
 } from "../../actions";
 
@@ -123,6 +124,24 @@ export default async function SpillerSide({
             <button type="submit">Gem</button>
           </form>
         ))}
+
+        <form action={tilfoejVoksen}>
+          <h3>Tilføj kontaktperson</h3>
+          <input type="hidden" name="spillerId" value={spiller.id} />
+          <label>
+            Navn
+            <input type="text" name="navn" />
+          </label>
+          <label>
+            E-mail
+            <input type="email" name="email" />
+          </label>
+          <label>
+            Telefon
+            <input type="text" name="telefon" />
+          </label>
+          <button type="submit">Tilføj</button>
+        </form>
       </section>
 
       <section>

@@ -1693,6 +1693,18 @@ om 48 timer, og få hulningen med på QR-arket (og gerne grupperet efter den).
   person. Kan påvirke spillere på et hold, holdlederen ikke selv ser — det
   gjorde en almindelig rettelse af en delt voksen allerede.
 
+**Tilføj kontaktperson** (`tilfoejVoksen` i `app/overblik/actions.ts`,
+formular nederst i "Voksne" på spillerens side) — tilføjet bagefter, efter
+ønske: holdleder (og kasserer/administrator) kan give en spiller en
+kontaktperson, også en spiller uden nogen, hvor der ellers ikke var noget
+at rette. Kræver mindst en mailadresse eller et telefonnummer; mailen
+tjekkes for en åbenlys tastefejl og gemmes med små bogstaver
+(`lib/overblik/kontakt.ts`, testet). Findes mailadressen allerede hos en
+anden voksen, knyttes den voksne til spilleren i stedet for at oprettes
+igen (samme princip som ved fletning og import), og kun tomme felter hos
+den eksisterende udfyldes. En ny kontakt får ikke automatisk en mail, selv
+om saldoen er lav — brug "Send påmindelse nu". Afprøvet begge veje.
+
 **Manuel påmindelse ignorerer 48 timer** (ændrer en regel fra "Regler der
 ikke må ændres uden at spørge", efter udtrykkeligt ønske):
 - **Kun den manuelle knap** (`tjekOgSendPaamindelser(spillerId, { tving:

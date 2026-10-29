@@ -8,6 +8,7 @@ import { kraevOverblikAdgang } from "@/lib/kraev-overblik-adgang";
 import { kanRetteSaldi, kanRetteSaldoForHold, kanSeHold } from "@/lib/roller";
 import { rensSkoejteNote } from "@/lib/skoejte-note";
 import { relationerDerSkalFlyttes } from "@/lib/overblik/voksen-fletning";
+import { rensNyKontakt } from "@/lib/overblik/kontakt";
 import { erNyligPaamindet } from "@/lib/mails/regler";
 import { beregnSaldo } from "@/lib/saldo";
 import { tjekOgSendPaamindelser } from "@/lib/mails/send";
@@ -235,6 +236,63 @@ export async function sendPaamindelseNu(formData: FormData) {
   }
 
   await tjekOgSendPaamindelser(spillerId, { tving: true });
+
+  revalidatePath(`/overblik/spillere/${spillerId}`);
+}
+
+// Tilføjer en kontaktperson til en spiller — fx en spiller uden nogen
+// registreret forælder, eller en ekstra kontakt ved siden af den, importen
+// fandt. Findes mailadressen allerede hos en anden voksen, er det samme
+// person (som ved import og ved rettelse af en mail): den voksne knyttes
+// til spilleren i stedet for at oprettes igen, så adressen kan stå på
+// flere spillere uden dubletter.
+export async function tilfoejVoksen(formData: FormData) {
+  const adgang = await kraevOverblikAdgang();
+  if (!adgang.ok) {
+    throw new Error("Ingen adgang.");
+  }
+
+  const spillerId = String(formData.get("spillerId"));
+  const spiller = await hentSpillerEllerFejl(spillerId);
+  if (!kanSeHold(adgang.adgang, spiller.hold)) {
+    throw new Error("Ingen adgang til det hold.");
+  }
+
+  const renset = rensNyKontakt({
+    navn: String(formData.get("navn") ?? ""),
+    email: String(formData.get("email") ?? ""),
+    telefon: String(formData.get("telefon") ?? ""),
+  });
+  if (!renset.ok) {
+    throw new Error(renset.fejl);
+  }
+  const { navn, email, telefon } = renset.vaerdi;
+
+  await prisma.$transaction(async (tx) => {
+    const eksisterende = email ? await tx.voksen.findUnique({ where: { email } }) : null;
+
+    let voksenId: string;
+    if (eksisterende) {
+      voksenId = eksisterende.id;
+      // Den eksisterende voksen beholder sine oplysninger — kun tomme
+      // felter udfyldes, ligesom ved en fletning.
+      if ((!eksisterende.navn && navn) || (!eksisterende.telefon && telefon)) {
+        await tx.voksen.update({
+          where: { id: eksisterende.id },
+          data: { navn: eksisterende.navn || navn, telefon: eksisterende.telefon || telefon },
+        });
+      }
+    } else {
+      const ny = await tx.voksen.create({ data: { navn, email, telefon } });
+      voksenId = ny.id;
+    }
+
+    await tx.relation.upsert({
+      where: { spillerId_voksenId: { spillerId, voksenId } },
+      create: { spillerId, voksenId },
+      update: {},
+    });
+  });
 
   revalidatePath(`/overblik/spillere/${spillerId}`);
 }
