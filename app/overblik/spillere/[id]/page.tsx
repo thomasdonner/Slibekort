@@ -6,6 +6,7 @@ import { MAKS_SKOEJTE_NOTE_LAENGE } from "@/lib/skoejte-note";
 import { beregnSaldo } from "@/lib/saldo";
 import { saldoKlasse } from "@/lib/ui/saldo-klasse";
 import { findSoskendeIds } from "@/lib/overblik/soskende";
+import { bestemMailTrin } from "@/lib/mails/regler";
 import {
   gemSkoejteNote,
   markerStoppet,
@@ -51,6 +52,17 @@ export default async function SpillerSide({
   // resten af det kasserer/administrator kan (kanRette ovenfor).
   const kanRetteSaldoHer = kanRetteSaldoForHold(adgang.adgang, spiller.hold);
 
+  // Hvem en manuel påmindelse ville gå til lige nu, og om der overhovedet
+  // er noget at sende — vist ved knappen, så den aldrig er et tryk, der
+  // lydløst ikke gør noget.
+  const paamindelsesTrin = bestemMailTrin(saldo);
+  const paamindelsesModtagere = spiller.relationer
+    .filter((r) => r.modtagerMails && r.voksen.email)
+    .map((r) => r.voksen.email as string);
+  const sidstePaamindelse = spiller.mails.find(
+    (m) => m.type === "advarsel" || m.type === "rykker",
+  );
+
   let soskende: { id: string; navn: string }[] = [];
   if (kanRette && saldo !== 0) {
     const voksenIds = spiller.relationer.map((r) => r.voksenId);
@@ -83,6 +95,10 @@ export default async function SpillerSide({
 
       <section>
         <h2>Voksne</h2>
+        <p>
+          Står den samme mailadresse på flere spillere, deles kontakten
+          automatisk — søskende får så én samlet påmindelse.
+        </p>
         {spiller.relationer.length === 0 && <p>Ingen voksne tilknyttet.</p>}
         {spiller.relationer.map((relation) => (
           <form action={opdaterVoksenKontakt} key={relation.voksenId}>
@@ -149,20 +165,43 @@ export default async function SpillerSide({
         </section>
       )}
 
+      {spiller.aktiv && (
+        <section>
+          <h2>Påmindelse om opfyldning</h2>
+          {sidstePaamindelse && (
+            <p>
+              Seneste påmindelse sendt{" "}
+              {new Date(sidstePaamindelse.tidspunkt).toLocaleString("da-DK")}.
+            </p>
+          )}
+          {!paamindelsesTrin ? (
+            <p>
+              Saldoen er {saldo}. Der sendes kun påmindelser ved saldo 1 eller
+              lavere.
+            </p>
+          ) : paamindelsesModtagere.length === 0 ? (
+            <p>
+              Ingen mailadresse er registreret, så der er ikke nogen at sende
+              til. Ret en mailadresse under Voksne ovenfor.
+            </p>
+          ) : (
+            <>
+              <p>
+                Sendes til: {paamindelsesModtagere.join(", ")}. Knappen sender
+                med det samme og ignorerer 48-timersgrænsen — brug den fx, når
+                en mailadresse er rettet.
+              </p>
+              <form action={sendPaamindelseNu}>
+                <input type="hidden" name="spillerId" value={spiller.id} />
+                <button type="submit">Send påmindelse nu</button>
+              </form>
+            </>
+          )}
+        </section>
+      )}
+
       {kanRette && spiller.aktiv && (
         <>
-          <section>
-            <h2>Påmindelse</h2>
-            <p>
-              Sendes kun hvis saldoen reelt kalder på det, og ikke hvis der
-              allerede er sendt en påmindelse inden for de sidste 48 timer.
-            </p>
-            <form action={sendPaamindelseNu}>
-              <input type="hidden" name="spillerId" value={spiller.id} />
-              <button type="submit">Send påmindelse nu</button>
-            </form>
-          </section>
-
           <section>
             <h2>QR-kode</h2>
             <p>

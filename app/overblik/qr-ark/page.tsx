@@ -6,6 +6,7 @@ import { kanSeAlleHold, kanSeHold } from "@/lib/roller";
 import { betalingsUrl } from "@/lib/betaling/url";
 import { genererQrSvg } from "@/lib/qr/generer-svg";
 import { ENGANGSSLIBNING_HOLD } from "@/lib/spillere/engangsslibning";
+import { grupperEfterHulning } from "@/lib/qr/hulning-grupper";
 
 // Kravspecifikationen, afsnit 5.3: "Systemet danner en QR-kode. Holdlederen
 // printer arket og klipper koden ud til skøjteposen." Koden på arket er den
@@ -15,9 +16,9 @@ import { ENGANGSSLIBNING_HOLD } from "@/lib/spillere/engangsslibning";
 export default async function QrArkSide({
   searchParams,
 }: {
-  searchParams: Promise<{ hold?: string; spillerId?: string }>;
+  searchParams: Promise<{ hold?: string; spillerId?: string; gruppering?: string }>;
 }) {
-  const { hold, spillerId } = await searchParams;
+  const { hold, spillerId, gruppering } = await searchParams;
 
   const adgang = await kraevOverblikAdgang();
   if (!adgang.ok) {
@@ -40,7 +41,14 @@ export default async function QrArkSide({
       where: { hold, aktiv: true },
       orderBy: { navn: "asc" },
     });
-    return <QrArk overskrift={hold} spillere={spillere} />;
+    return (
+      <QrArk
+        overskrift={hold}
+        spillere={spillere}
+        holdTilValg={hold}
+        grupperetEfterHulning={gruppering === "hulning"}
+      />
+    );
   }
 
   // Engangsslibning (lib/spillere/engangsslibning.ts) er ikke et rigtigt
@@ -79,13 +87,50 @@ export default async function QrArkSide({
   );
 }
 
+type QrSpiller = {
+  id: string;
+  navn: string;
+  hold: string;
+  qrToken: string;
+  skoejteNote: string | null;
+};
+
+function QrKort({ spiller }: { spiller: QrSpiller }) {
+  return (
+    <div className="qr-kort">
+      <div
+        className="qr-billede"
+        // Indholdet er selv genereret ud fra vores egen URL, ikke
+        // fritekst nogen udefra har skrevet — sikkert at indsætte.
+        dangerouslySetInnerHTML={{
+          __html: genererQrSvg(betalingsUrl(spiller.qrToken)),
+        }}
+      />
+      <p>{spiller.navn}</p>
+      <p>{spiller.hold}</p>
+      {/* Hulningen står på selve det udklippede kort, så sliberen kan se
+          den på skøjteposen uden at slå spilleren op. Arket er et
+          øjebliksbillede — rettes noten bagefter, skal arket printes igen. */}
+      {spiller.skoejteNote && <p className="qr-note">{spiller.skoejteNote}</p>}
+    </div>
+  );
+}
+
 function QrArk({
   overskrift,
   spillere,
+  holdTilValg,
+  grupperetEfterHulning = false,
 }: {
   overskrift: string;
-  spillere: { id: string; navn: string; hold: string; qrToken: string }[];
+  spillere: QrSpiller[];
+  // Sat kun når arket er et helt hold — så der kan skiftes mellem
+  // alfabetisk visning og gruppering. Ikke relevant for ét enkelt kort.
+  holdTilValg?: string;
+  grupperetEfterHulning?: boolean;
 }) {
+  const grupper = grupperetEfterHulning ? grupperEfterHulning(spillere) : [];
+
   return (
     <main>
       <div className="skjules-ved-print">
@@ -94,25 +139,43 @@ function QrArk({
           Udskriv siden (Ctrl/Cmd+P), klip koderne ud, og fastgør dem til
           skøjteposerne.
         </p>
+        {holdTilValg && (
+          <nav className="hold-vaelger">
+            <Link
+              href={`/overblik/qr-ark?hold=${encodeURIComponent(holdTilValg)}`}
+              className={grupperetEfterHulning ? undefined : "aktiv"}
+            >
+              Alfabetisk
+            </Link>
+            <Link
+              href={`/overblik/qr-ark?hold=${encodeURIComponent(holdTilValg)}&gruppering=hulning`}
+              className={grupperetEfterHulning ? "aktiv" : undefined}
+            >
+              Gruppér efter hulning
+            </Link>
+          </nav>
+        )}
       </div>
 
       {spillere.length === 0 ? (
         <p className="skjules-ved-print">Ingen aktive spillere på dette hold.</p>
+      ) : grupperetEfterHulning ? (
+        grupper.map((gruppe) => (
+          <section className="qr-gruppe" key={gruppe.noegle ?? "ingen"}>
+            <h2>
+              {gruppe.navn ?? "Ingen hulning noteret"} ({gruppe.spillere.length})
+            </h2>
+            <div className="qr-gitter">
+              {gruppe.spillere.map((s) => (
+                <QrKort key={s.id} spiller={s} />
+              ))}
+            </div>
+          </section>
+        ))
       ) : (
         <div className="qr-gitter">
           {spillere.map((s) => (
-            <div className="qr-kort" key={s.id}>
-              <div
-                className="qr-billede"
-                // Indholdet er selv genereret ud fra vores egen URL, ikke
-                // fritekst nogen udefra har skrevet — sikkert at indsætte.
-                dangerouslySetInnerHTML={{
-                  __html: genererQrSvg(betalingsUrl(s.qrToken)),
-                }}
-              />
-              <p>{s.navn}</p>
-              <p>{s.hold}</p>
-            </div>
+            <QrKort key={s.id} spiller={s} />
           ))}
         </div>
       )}
@@ -133,9 +196,29 @@ function QrArk({
           width: 100%;
           height: auto;
         }
+        .qr-note {
+          font-weight: 600;
+          font-size: 0.85rem;
+          white-space: pre-wrap;
+          overflow-wrap: anywhere;
+        }
+        .qr-gruppe {
+          break-inside: avoid-page;
+        }
+        .qr-gruppe h2 {
+          margin-top: 1.5rem;
+          font-size: 1.1rem;
+        }
         @media print {
           .skjules-ved-print {
             display: none;
+          }
+          .qr-gruppe {
+            background: none;
+            border: none;
+            box-shadow: none;
+            padding: 0;
+            margin: 0 0 1rem;
           }
         }
       `}</style>

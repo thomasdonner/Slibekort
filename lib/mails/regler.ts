@@ -26,6 +26,19 @@ export function erIndenforPaamindelsesspaerretid(
   return timerSiden < PAAMINDELSE_SPAERRETID_TIMER;
 }
 
+// En manuel påmindelse (kasserer/holdleder trykker selv) må sendes uden om
+// de 48 timer — fx når en mailadresse er rettet, og den første mail gik til
+// en forkert adresse. Men to hurtige tryk (dobbeltklik) skal ikke give to
+// mails til forældrene, så en påmindelse, der netop er sendt, spærrer
+// kortvarigt for endnu en manuel.
+export const MANUEL_PAAMINDELSE_VENTETID_MINUTTER = 2;
+
+export function erNyligPaamindet(sidstPaamindet: Date | null, nu: Date): boolean {
+  if (!sidstPaamindet) return false;
+  const minutterSiden = (nu.getTime() - sidstPaamindet.getTime()) / 1000 / 60;
+  return minutterSiden < MANUEL_PAAMINDELSE_VENTETID_MINUTTER;
+}
+
 export type PaamindelseKandidat = {
   spillerId: string;
   navn: string;
@@ -48,12 +61,21 @@ export type UdvalgtPaamindelse = {
 export function udvaelgTilPaamindelse(
   kandidater: PaamindelseKandidat[],
   nu: Date,
+  // Spillere, hvis 48-timersgrænse ignoreres — kun den, en bruger
+  // udtrykkeligt har trykket "Send påmindelse nu" for. Søskende følger
+  // stadig den almindelige regel, så de ikke også får en ekstra mail.
+  ignorerSpaerretidFor: string[] = [],
 ): UdvalgtPaamindelse[] {
   const udvalgte: UdvalgtPaamindelse[] = [];
   for (const k of kandidater) {
     const trin = bestemMailTrin(k.saldo);
     if (!trin) continue;
-    if (erIndenforPaamindelsesspaerretid(k.sidstPaamindet, nu)) continue;
+    if (
+      !ignorerSpaerretidFor.includes(k.spillerId) &&
+      erIndenforPaamindelsesspaerretid(k.sidstPaamindet, nu)
+    ) {
+      continue;
+    }
     udvalgte.push({ spillerId: k.spillerId, navn: k.navn, trin });
   }
   return udvalgte;

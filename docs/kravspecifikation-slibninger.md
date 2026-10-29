@@ -63,7 +63,7 @@ som oprindeligt), på samme side som den almindelige opfyldning
 |---|---|---|
 | **Skøjtesliber** | Scanne, trække en slibning, fortryde inden for 10 sek., se en spillers saldo, se og rette spillerens skøjtenote (hulning) | Rette saldi, se mails, se kontaktoplysninger ud over fornavne |
 | **Kasserer** | Alt i overblikket: rette saldi, sende påmindelser, trække rapporter | Ændre systemets opsætning |
-| **Holdleder** | Se sit eget holds saldi, rette saldi for spillere på eget hold, rette forældreoplysninger og skøjtenote på eget hold | Rette saldi på andre hold, importere hold, trække rapporter og statistik, se andre hold |
+| **Holdleder** | Se sit eget holds saldi, rette saldi for spillere på eget hold, rette forældreoplysninger (også en mailadresse, der allerede findes hos en anden voksen — så deles kontakten) og skøjtenote på eget hold, sende en påmindelse manuelt | Rette saldi på andre hold, importere hold, trække rapporter og statistik, se andre hold |
 | **Forælder** | Se sit barns saldo og historik, købe opfyldning, rette egen mailadresse | Se andre spillere |
 | **Administrator** | Alt, inklusive brugeradgang og opsætning | — |
 
@@ -215,7 +215,7 @@ Sendes efter betaling. Indeholder beløb, antal slibninger, ny saldo og dato. Fu
 
 **Modtagere:** den primære mailadresse, plus den alternative hvis den er en anden. Er de to adresser ens, sendes kun én mail. Den alternative adresse findes typisk, hvor forældrene ikke bor sammen, og begge husstande har brug for beskeden — den er derfor en ekstra modtager, ikke en reserve, der først bruges hvis den første fejler. En reserveløsning ville i praksis aldrig træde i kraft, fordi en mail sjældent melder tilbage, at den ikke er læst.
 
-**Regler for udsendelse:** maksimalt én påmindelse pr. spiller pr. 48 timer. Mails sendes fra klubbens eget domæne med SPF og DKIM opsat, ellers havner de i spam og hele automatikken er værdiløs.
+**Regler for udsendelse:** maksimalt én automatisk påmindelse pr. spiller pr. 48 timer. En påmindelse, som kasserer eller holdleder sender manuelt (fx efter at en mailadresse er rettet), ignorerer de 48 timer. Mails sendes fra klubbens eget domæne med SPF og DKIM opsat, ellers havner de i spam og hele automatikken er værdiløs.
 
 ---
 

@@ -110,7 +110,10 @@ dokumentation.
   af sliberen og logges som manuelt godkendt.
 - Fortrydelsesvindue: 10 sekunder på telefonen, 24 timer for kassereren.
 - Advarsel ved saldo 1, rykker ved 0 og igen ved −2. Maksimalt én
-  påmindelse pr. spiller pr. 48 timer.
+  automatisk påmindelse pr. spiller pr. 48 timer. (En manuel påmindelse,
+  som en kasserer eller holdleder selv trykker afsted, ignorerer de 48
+  timer — se "Beslutninger undervejs — kontakter, manuel påmindelse og
+  QR-ark". Ændret efter ønske.)
 - Alternativ mailadresse får mailen samtidig med den primære, ikke som
   reserve. Er de to adresser ens, sendes kun én mail.
 - Ingen refusion ved udmeldelse. Saldoen kan flyttes til en søskende.
@@ -230,12 +233,12 @@ dokumentation.
   praksis betyder for denne bruger. Startede som CSV, er sidenhen ændret
   til rigtige `.xlsx`-filer efter ønske — se "Beslutninger undervejs —
   saldorapport pr. hold og som Excel" for detaljerne og hvorfor.
-- **"Sende påmindelser" findes nu** som en knap på spillerens side i
-  overblikket (`sendPaamindelseNu`). Den respekterer med vilje de samme 48
-  timer som den automatiske udsendelse — at trykke på knappen to gange
-  samme dag skal ikke sende to mails. Skal en mail tvinges igennem
-  hurtigere, er det en manuel sletning i `mails`-tabellen, ikke en
-  UI-genvej uden om reglen.
+- **"Sende påmindelser" findes som en knap på spillerens side i
+  overblikket** (`sendPaamindelseNu`). Oprindeligt respekterede den de
+  samme 48 timer som den automatiske udsendelse, og en tvungen mail var en
+  manuel sletning i `mails`-tabellen. Det er ændret efter ønske: knappen
+  ignorerer nu 48-timersgrænsen — se "Beslutninger undervejs — kontakter,
+  manuel påmindelse og QR-ark" længere nede for hvordan og hvorfor.
 - **Påmindelsesmails udløses ved enhver bevægelse, der oprigtigt kan have
   ændret saldoen** (`tjekOgSendPaamindelser`, kaldt fra `/api/slib/traek`,
   `rettSaldo`, `registrerKoeb` og søskende-overførslen i `markerStoppet`),
@@ -1656,3 +1659,72 @@ manglende record.
   sender som `aaik.dk`, og en test mod et spam-scoringsværktøj. Begge kræver
   enten en postkasse på one.com eller at sende en rigtig testmail ud af
   huset, og er ikke noget, der er aftalt.
+
+## Beslutninger undervejs — kontakter, manuel påmindelse og QR-ark
+
+Ønske (fire ting fra holdlederne): rette en kontakts mailadresse, lade
+samme mailadresse stå på flere spillere, sende en påmindelse manuelt uden
+om 48 timer, og få hulningen med på QR-arket (og gerne grupperet efter den).
+
+**Samme mailadresse på flere spillere (og holdleder retter kontaktens mail):**
+- **Holdleder kunne allerede rette kontaktoplysninger** på egne hold
+  (`opdaterVoksenKontakt` bruger `kanSeHold`) — det, der stoppede dem, var,
+  at en adresse, der allerede stod hos en anden voksen, blev afvist
+  ("En anden voksen har allerede denne mailadresse"). Det er den fejl, der
+  er rettet.
+- **Samme mailadresse = samme person.** `voksne.email` er fortsat unik, og
+  en voksen kan høre til flere spillere (`relationer`). Rettes en kontakts
+  mail til en adresse, en anden voksen allerede har, flettes de to: den
+  gamle voksens børn knyttes til den eksisterende voksen, og den gamle
+  slettes (`lib/overblik/voksen-fletning.ts`, testet). Det er det samme
+  princip, import allerede følger ("samme mail = samme voksen"), nu også
+  ved manuel rettelse.
+- **Hvorfor flette og ikke tillade dubletter:** to voksne-rækker med samme
+  adresse ville give to påmindelsesmails til samme forælder, hver med sit
+  barn, og ville ødelægge sammenlægningen af søskende i én mail (den
+  grupperer netop på voksen-id).
+- **Den eksisterende voksen beholder sit navn og sin telefon**; formularen
+  udfylder kun felter, der var tomme. Formularen er forhåndsudfyldt med den
+  GAMLE voksens oplysninger, så at overskrive med dem ville ændre en
+  kontakt, ingen har rørt — fundet ved afprøvning, første version gjorde
+  netop det.
+- **Flettes alle børn, ikke kun det ene**, når den gamle voksen havde flere:
+  rettelsen gælder "denne kontaktperson", og samme adresse betyder samme
+  person. Kan påvirke spillere på et hold, holdlederen ikke selv ser — det
+  gjorde en almindelig rettelse af en delt voksen allerede.
+
+**Manuel påmindelse ignorerer 48 timer** (ændrer en regel fra "Regler der
+ikke må ændres uden at spørge", efter udtrykkeligt ønske):
+- **Kun den manuelle knap** (`tjekOgSendPaamindelser(spillerId, { tving:
+  true })`). Alle automatiske udløsere (efter en slibning, rettelse osv.)
+  følger stadig 48 timer. Typisk brug: en mailadresse er rettet, og den
+  første mail gik til en forkert adresse.
+- **Saldoen afgør stadig, om der er noget at sende** — advarsel ved 1,
+  rykker ved 0 og ≤ −2; ved højere saldo findes der ingen skabelon. Siden
+  viser derfor i stedet for knappen en forklaring ("Saldoen er 5 …" eller
+  "Ingen mailadresse er registreret"), så et tryk aldrig lydløst ikke gør
+  noget. Knappen viser, hvem mailen sendes til, og hvornår den seneste
+  påmindelse gik.
+- **Søskende følger den almindelige regel**: kun den spiller, der trykkes
+  for, tvinges (`ignorerSpaerretidFor` i `udvaelgTilPaamindelse`, testet), så
+  et søskende med en nylig påmindelse ikke også får en ekstra mail.
+- **Kort spærre mod dobbeltklik** (`erNyligPaamindet`, 2 minutter): to
+  hurtige tryk må ikke give to mails. Afprøvet — et tryk 20 sekunder efter
+  en mail blev afvist, og efter 10 minutter blev det sendt.
+- **Holdleder må også sende** (alle, der kan se spilleren, `kanSeHold`) —
+  de er dem, der retter mailadressen og vil have mailen afsted med det
+  samme. Sektionen "Påmindelse" er derfor flyttet ud af kasserer-blokken.
+
+**Hulning på QR-arket og gruppering:**
+- **Noten står på selve det udklippede kort** (`/overblik/qr-ark`), så den
+  kan ses på skøjteposen. Arket er et øjebliksbillede: rettes noten
+  bagefter, skal arket printes igen.
+- **"Gruppér efter hulning"** (`?hold=…&gruppering=hulning`) deler holdet i
+  grupper efter noten (`lib/qr/hulning-grupper.ts`, testet): store/små
+  bogstaver og ekstra mellemrum ses der bort fra, tal sorteres som tal
+  ("Hulning 9" før "Hulning 15"), spillere uden note står sidst, og
+  spillerne er alfabetiske i hver gruppe. Standardvisningen er stadig
+  alfabetisk. Afprøvet på U14's rigtige noter (hulninger 15–30).
+- **Ingen tvungne sideskift mellem grupper** — små grupper ville ellers
+  give mange næsten tomme sider. Hver gruppes overskrift og antal kan
+  printes.

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   bestemMailTrin,
   erIndenforPaamindelsesspaerretid,
+  erNyligPaamindet,
   udvaelgTilPaamindelse,
 } from "./regler";
 
@@ -111,5 +112,64 @@ describe("udvaelgTilPaamindelse", () => {
       nu,
     );
     expect(udvalgte).toEqual([{ spillerId: "a", navn: "Anders", trin: "advarsel" }]);
+  });
+});
+
+describe("udvaelgTilPaamindelse med tvungen manuel påmindelse", () => {
+  const nu = new Date("2026-01-15T12:00:00.000Z");
+  const nyligPaamindet = new Date(nu.getTime() - 60 * 60 * 1000);
+
+  it("ignorerer 48-timersgrænsen for den spiller, der udtrykkeligt er valgt", () => {
+    const udvalgte = udvaelgTilPaamindelse(
+      [{ spillerId: "a", navn: "Anders", saldo: 0, sidstPaamindet: nyligPaamindet }],
+      nu,
+      ["a"],
+    );
+    expect(udvalgte).toEqual([{ spillerId: "a", navn: "Anders", trin: "rykker" }]);
+  });
+
+  it("lader en søskende følge den almindelige regel, selvom den valgte tvinges", () => {
+    const udvalgte = udvaelgTilPaamindelse(
+      [
+        { spillerId: "a", navn: "Anders", saldo: 1, sidstPaamindet: nyligPaamindet },
+        { spillerId: "b", navn: "Bo", saldo: 1, sidstPaamindet: nyligPaamindet },
+      ],
+      nu,
+      ["a"],
+    );
+    expect(udvalgte.map((u) => u.spillerId)).toEqual(["a"]);
+  });
+
+  it("tvinger ikke en spiller med sund saldo — saldoen afgør stadig, om der er noget at sende", () => {
+    const udvalgte = udvaelgTilPaamindelse(
+      [{ spillerId: "a", navn: "Anders", saldo: 5, sidstPaamindet: null }],
+      nu,
+      ["a"],
+    );
+    expect(udvalgte).toEqual([]);
+  });
+
+  it("uden en tvunget spiller gælder 48-timersgrænsen som hidtil", () => {
+    const udvalgte = udvaelgTilPaamindelse(
+      [{ spillerId: "a", navn: "Anders", saldo: 0, sidstPaamindet: nyligPaamindet }],
+      nu,
+    );
+    expect(udvalgte).toEqual([]);
+  });
+});
+
+describe("erNyligPaamindet (spærre mod dobbeltklik)", () => {
+  const nu = new Date("2026-01-15T12:00:00.000Z");
+
+  it("er falsk uden en tidligere påmindelse", () => {
+    expect(erNyligPaamindet(null, nu)).toBe(false);
+  });
+
+  it("er sand lige efter en påmindelse", () => {
+    expect(erNyligPaamindet(new Date(nu.getTime() - 20 * 1000), nu)).toBe(true);
+  });
+
+  it("er falsk efter et par minutter", () => {
+    expect(erNyligPaamindet(new Date(nu.getTime() - 3 * 60 * 1000), nu)).toBe(false);
   });
 });

@@ -19,7 +19,14 @@ import { sendMail } from "./resend";
  * ned i advarsels- eller rykkerområdet — se CLAUDE.md for hvorfor det er
  * uskadeligt at kalde den efter alle bevægelser, også dem der lægger til.
  */
-export async function tjekOgSendPaamindelser(spillerId: string): Promise<void> {
+export async function tjekOgSendPaamindelser(
+  spillerId: string,
+  // `tving` kun fra den manuelle "Send påmindelse nu"-knap: ignorerer
+  // 48-timersgrænsen for netop denne spiller. Saldoen afgør stadig, om der
+  // er noget at sende, og automatiske kald (efter en slibning m.fl.) bruger
+  // aldrig `tving`.
+  valg: { tving?: boolean } = {},
+): Promise<void> {
   const spiller = await prisma.spiller.findUnique({
     where: { id: spillerId },
     include: {
@@ -46,7 +53,7 @@ export async function tjekOgSendPaamindelser(spillerId: string): Promise<void> {
   // Spilleren selv er spærret af sin egen seneste påmindelse — så er der
   // intet at gøre, uanset hvad søskende måtte have brug for lige nu (de
   // udløser selv, når deres egen bevægelse rammer dem).
-  if (udvaelgTilPaamindelse([selv], nu).length === 0) return;
+  if (!valg.tving && udvaelgTilPaamindelse([selv], nu).length === 0) return;
 
   const modtagere = spiller.relationer.filter((r) => r.voksen.email);
   for (const modtager of modtagere) {
@@ -55,6 +62,7 @@ export async function tjekOgSendPaamindelser(spillerId: string): Promise<void> {
       email: modtager.voksen.email!,
       voksenNavn: modtager.voksen.navn,
       nu,
+      tvingSpillerId: valg.tving ? spillerId : undefined,
     });
   }
 }
@@ -64,6 +72,7 @@ async function sendKombineretPaamindelse(params: {
   email: string;
   voksenNavn: string | null;
   nu: Date;
+  tvingSpillerId?: string;
 }): Promise<void> {
   const relationer = await prisma.relation.findMany({
     where: { voksenId: params.voksenId, modtagerMails: true },
@@ -89,7 +98,11 @@ async function sendKombineretPaamindelse(params: {
     });
   }
 
-  const udvalgte = udvaelgTilPaamindelse(kandidater, params.nu);
+  const udvalgte = udvaelgTilPaamindelse(
+    kandidater,
+    params.nu,
+    params.tvingSpillerId ? [params.tvingSpillerId] : [],
+  );
   if (udvalgte.length === 0) return;
 
   const boern: PaamindelseBarn[] = udvalgte.map((u) => ({

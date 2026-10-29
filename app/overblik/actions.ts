@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { kraevOverblikAdgang } from "@/lib/kraev-overblik-adgang";
 import { kanRetteSaldi, kanRetteSaldoForHold, kanSeHold } from "@/lib/roller";
 import { rensSkoejteNote } from "@/lib/skoejte-note";
+import { relationerDerSkalFlyttes } from "@/lib/overblik/voksen-fletning";
+import { erNyligPaamindet } from "@/lib/mails/regler";
 import { beregnSaldo } from "@/lib/saldo";
 import { tjekOgSendPaamindelser } from "@/lib/mails/send";
 
@@ -207,17 +209,32 @@ export async function markerStoppet(formData: FormData) {
 // slette rækken i `mails` selv, ikke klikke sig forbi reglen i UI'et.
 export async function sendPaamindelseNu(formData: FormData) {
   const adgang = await kraevOverblikAdgang();
-  if (!adgang.ok || !kanRetteSaldi(adgang.adgang)) {
+  if (!adgang.ok) {
     throw new Error("Ingen adgang til at sende påmindelser.");
   }
 
   const spillerId = String(formData.get("spillerId"));
   const spiller = await hentSpillerEllerFejl(spillerId);
+  // Alle, der kan se spilleren (kasserer/administrator: alle hold,
+  // holdleder: egne hold), må sende — typisk fordi de lige har rettet
+  // forælderens mailadresse og vil have påmindelsen afsted med det samme.
   if (!kanSeHold(adgang.adgang, spiller.hold)) {
     throw new Error("Ingen adgang til det hold.");
   }
 
-  await tjekOgSendPaamindelser(spillerId);
+  // Kun en kort spærre mod dobbeltklik — selve 48-timersgrænsen ignoreres
+  // med vilje her (se `tving` i tjekOgSendPaamindelser).
+  const sidsteMail = await prisma.mail.findFirst({
+    where: { spillerId, type: { in: ["advarsel", "rykker"] } },
+    orderBy: { tidspunkt: "desc" },
+  });
+  if (erNyligPaamindet(sidsteMail?.tidspunkt ?? null, new Date())) {
+    throw new Error(
+      "Der blev netop sendt en påmindelse — vent et par minutter, før du sender igen.",
+    );
+  }
+
+  await tjekOgSendPaamindelser(spillerId, { tving: true });
 
   revalidatePath(`/overblik/spillere/${spillerId}`);
 }
@@ -249,23 +266,64 @@ export async function opdaterVoksenKontakt(formData: FormData) {
     throw new Error("Den voksne er ikke tilknyttet denne spiller.");
   }
 
-  try {
-    await prisma.voksen.update({
-      where: { id: voksenId },
-      data: {
-        navn: navn || null,
-        email: email || null,
-        telefon: telefon || null,
-      },
+  // Findes mailadressen allerede hos en anden voksen, er det samme person
+  // (jf. lib/overblik/voksen-fletning.ts): de to flettes, så adressen kan
+  // stå på flere spillere uden at nogen får dobbelte påmindelser.
+  const anden = email ? await prisma.voksen.findUnique({ where: { email } }) : null;
+
+  if (anden && anden.id !== voksenId) {
+    const gamleRelationer = await prisma.relation.findMany({ where: { voksenId } });
+    const eksisterendeSpillere = await prisma.relation.findMany({
+      where: { voksenId: anden.id },
+      select: { spillerId: true },
     });
-  } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
-      throw new Error("En anden voksen har allerede denne mailadresse.");
+    const skalFlyttes = relationerDerSkalFlyttes(
+      gamleRelationer,
+      eksisterendeSpillere.map((r) => r.spillerId),
+    );
+
+    await prisma.$transaction([
+      ...skalFlyttes.map((r) =>
+        prisma.relation.create({
+          data: {
+            spillerId: r.spillerId,
+            voksenId: anden.id,
+            modtagerMails: r.modtagerMails,
+          },
+        }),
+      ),
+      prisma.relation.deleteMany({ where: { voksenId } }),
+      // Den eksisterende voksen beholder sine oplysninger — formularen var
+      // udfyldt med den GAMLE voksens navn og telefon, så at overskrive
+      // med dem ville ændre en kontakt, ingen har rørt. Kun tomme felter
+      // udfyldes.
+      prisma.voksen.update({
+        where: { id: anden.id },
+        data: { navn: anden.navn || navn || null, telefon: anden.telefon || telefon || null },
+      }),
+      prisma.voksen.delete({ where: { id: voksenId } }),
+    ]);
+  } else {
+    try {
+      await prisma.voksen.update({
+        where: { id: voksenId },
+        data: {
+          navn: navn || null,
+          email: email || null,
+          telefon: telefon || null,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === "P2002"
+      ) {
+        // Kun hvis en anden netop har lagt samme adresse ind, mellem vores
+        // opslag og vores gem — ellers fanger fletningen ovenfor det.
+        throw new Error("Mailadressen blev netop oprettet hos en anden — prøv igen.");
+      }
+      throw error;
     }
-    throw error;
   }
 
   revalidatePath(`/overblik/spillere/${spillerId}`);
