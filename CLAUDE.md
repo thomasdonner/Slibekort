@@ -1740,3 +1740,31 @@ ikke må ændres uden at spørge", efter udtrykkeligt ønske):
 - **Ingen tvungne sideskift mellem grupper** — små grupper ville ellers
   give mange næsten tomme sider. Hver gruppes overskrift og antal kan
   printes.
+
+## Beslutninger undervejs — klubbens logo midt i QR-koderne
+
+Ønske: Aaiks logo skal sidde midt i QR-koderne på QR-arket.
+
+- **Fejlkorrektionen er sat op fra "M" til "H"** (`lib/qr/generer-svg.ts`).
+  Et logo dækker felter midt i koden, og "M" (ca. 15 % kan rettes) var
+  ikke nok; "H" kan rette ca. 30 %. Det gør koden lidt tættere (version 6–8,
+  altså 41–49 felter pr. side), men stadig let at aflæse på en skøjtepose.
+- **Pladen bag logoet dækker under 6 % af kodens felter** (24 % af kodens
+  bredde, logoet 82 % af pladen), så der er rigelig margin til
+  fejlkorrektionen. Målene står som konstanter ét sted, og testen bruger
+  de samme.
+- **Testet, ikke bare set**: `generer-svg.test.ts` aflæser 50 tilfældige
+  betalingsadresser (både 25 tegn lange cuid-tokens og 36 tegn lange
+  uuid-tokens, så også den største kode er med) med pladen dækket hvidt og
+  sort — begge værre end et rigtigt logo — med jsQR, samme bibliotek som
+  sliberens scanner. Derudover er den færdige SVG med det rigtige logo
+  rasteret og aflæst i tre størrelser, helt ned til 120 pixels (engangskontrol,
+  ikke gemt som test, fordi den kræver `sharp`, som ikke er en erklæret
+  afhængighed). Ikke afprøvet med en fysisk telefon og et fysisk print.
+- **Logoet hentes som billede (`<image href="/aaik-logo.svg">`), ikke
+  indlejret** — logoet er ca. 9 kB, og et ark med 20+ koder ville ellers
+  gentage det 20+ gange. Det virker i browserens udskrivning, fordi siden
+  er indlæst, når der printes.
+- **Koden selv er uændret** — den indeholder stadig samme adresse
+  (`${APP_URL}/betal/[qrToken]`), så alle QR-koder, der allerede er printet
+  uden logo, virker fortsat. Kun nye print får logoet.
