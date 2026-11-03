@@ -92,7 +92,11 @@ model Bevaegelse {
   oprindeligId String?        @unique
 
   spiller    Spiller     @relation(fields: [spillerId], references: [id])
-  udfoertAf  Bruger?     @relation(fields: [udfoertAfId], references: [id])
+  // Restrict: en bruger, der har udført en bevægelse, kan ikke slettes —
+  // Prismas standard for en valgfri relation ville ellers lydløst nulstille
+  // udfoertAfId, og historikken ville se ud som en automatisk MobilePay-
+  // betaling (som netop er det, en tom udfører betyder).
+  udfoertAf  Bruger?     @relation(fields: [udfoertAfId], references: [id], onDelete: Restrict)
   oprindelig Bevaegelse? @relation("Fortrydelse", fields: [oprindeligId], references: [id])
   fortrudtAf Bevaegelse? @relation("Fortrydelse")
 
@@ -182,8 +186,10 @@ model Bruger {
   @@map("brugere")
 }
 
-// Hvilke hold en holdleder har adgang til. Kun relevant for rollen
-// holdleder — kasserer og administrator ser og retter alle hold uanset.
+// Hvilke hold en bruger er tildelt. For en holdleder: de hold, vedkommende
+// kan se og rette. For en sliber: de hold, vedkommende kan slibe for — uden
+// tildelte hold kan en sliber slibe alle. Kasserer og administrator ser og
+// retter alle hold uanset.
 model BrugerHold {
   id       String   @id @default(cuid())
   brugerId String

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { kraevSliber } from "@/lib/kraev-sliber";
+import { afvisForkertHold, kraevSliber } from "@/lib/kraev-sliber";
+import { kanSlibeForHold } from "@/lib/roller";
 import { beregnSaldo } from "@/lib/saldo";
 import { erIndenforSpaerretid } from "@/lib/slibning";
 
@@ -26,6 +27,10 @@ export async function POST(request: Request) {
       { fejl: "Ukendt eller inaktiv QR-kode." },
       { status: 404 },
     );
+  }
+
+  if (!kanSlibeForHold(adgang.hold, spiller.hold)) {
+    return afvisForkertHold();
   }
 
   const sidsteSlibning = await prisma.bevaegelse.findFirst({

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { kraevSliber } from "@/lib/kraev-sliber";
+import { afvisForkertHold, kraevSliber } from "@/lib/kraev-sliber";
+import { kanSlibeForHold } from "@/lib/roller";
 import { rensSkoejteNote } from "@/lib/skoejte-note";
 
 // Sliberen retter spillerens hulning direkte på scannerskærmen — det er
@@ -26,6 +27,10 @@ export async function POST(request: Request) {
   const spiller = await prisma.spiller.findUnique({ where: { id: spillerId } });
   if (!spiller || !spiller.aktiv) {
     return NextResponse.json({ fejl: "Ukendt eller inaktiv spiller." }, { status: 404 });
+  }
+
+  if (!kanSlibeForHold(adgang.hold, spiller.hold)) {
+    return afvisForkertHold();
   }
 
   await prisma.spiller.update({

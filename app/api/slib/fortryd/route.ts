@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { kraevSliber } from "@/lib/kraev-sliber";
+import { afvisForkertHold, kraevSliber } from "@/lib/kraev-sliber";
+import { kanSlibeForHold } from "@/lib/roller";
 import { beregnSaldo } from "@/lib/saldo";
 import { erIndenforFortrydelsesvindue } from "@/lib/slibning";
 import { erGyldigtUdfoertAfNavn } from "@/lib/delt-konto";
@@ -62,6 +63,13 @@ export async function POST(request: Request) {
 
   if (!original || original.type !== "slibning") {
     return NextResponse.json({ fejl: "Ukendt slibning." }, { status: 404 });
+  }
+  const spiller = await prisma.spiller.findUnique({
+    where: { id: original.spillerId },
+    select: { hold: true },
+  });
+  if (!spiller || !kanSlibeForHold(adgang.hold, spiller.hold)) {
+    return afvisForkertHold();
   }
   if (original.fortrudtAf) {
     return NextResponse.json({ fejl: "Allerede fortrudt." }, { status: 409 });

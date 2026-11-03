@@ -981,9 +981,11 @@ holdes op mod en skøjtepose.
   begrænsning af v1, ikke en fejl. QR-sporet er upåvirket og virker
   offline som hidtil. Skal det tilføjes senere, er mønsteret allerede der
   i `lib/klient/db.ts`.
-- **Sliberen ser alle hold, ikke kun egne** — `kraevSliber` afgrænser
-  ikke på hold (i modsætning til holdlederens `adgang.hold`), så
-  hold-listen i `/api/slib/hold` er alle aktive hold.
+- **Sliberen ser alle hold, medmindre kontoen er tildelt hold** —
+  oprindeligt var en sliber slet ikke hold-afgrænset. Det er ændret efter
+  ønske: en sliber med tildelte hold kan kun slibe for dem, en sliber
+  uden hold kan stadig slibe alle. Se "Beslutninger undervejs — slet
+  brugere og tildel hold til slibere".
 - **Engangsslibning udelades fra hold-listen**, samme filter
   (`hold: { not: ENGANGSSLIBNING_HOLD }`) som alle andre hold-baserede
   lister i systemet (`/overblik`, `/overblik/qr-ark`, saldorapporten,
@@ -1804,3 +1806,71 @@ efterlod resten af rækken tom — 21 koder fyldte **4 sider** i stedet for 2.
 - **Kun afprøvet i Chromes printtilstand.** Safari og Firefox bryder sider
   lidt anderledes. Reglerne er almindelige CSS-regler for sideskift, men
   ikke set i de browsere.
+
+## Beslutninger undervejs — slet brugere og tildel hold til slibere
+
+Ønske: kunne slette en bruger helt (fx oprettet med en forkert mailadresse),
+og kunne tildele en sliber de hold, vedkommende må slibe for — fx U14, og
+så U12 og U16 oveni.
+
+**Slet bruger** (`sletBruger` i `app/overblik/adgang/actions.ts`, kun
+administrator, knappen "Slet" i tabellen på `/overblik/adgang`):
+- **Kun for en bruger, der intet har udført.** En bevægelse peger på den
+  bruger, der udførte den (`udfoertAfId`). Slettes brugeren, ville Prismas
+  standard for en valgfri relation (`SetNull`) lydløst nulstille feltet, og
+  historikken ville vise "Automatisk (MobilePay)" ved noget, et menneske
+  har gjort — det, en tom udfører netop betyder. Har brugeren udført noget,
+  vises i stedet en forklaring ("Kan ikke slettes — har udført 9
+  bevægelser. Fjern adgangen i stedet.") og "Fjern adgang" er vejen.
+- **Låst i selve databasen, ikke kun i koden:** `Bevaegelse.udfoertAf` er
+  nu `onDelete: Restrict` (migration `bevaegelse_udfoerer_restrict`, kun en
+  skiftet fremmednøgle, ingen data rørt). Afprøvet: en sletning af en bruger
+  med en bevægelse blev afvist af databasen, og både brugeren og bevægelsens
+  udfører stod uændret. Koden tjekker først, så brugeren får en forståelig
+  besked i stedet for en databasefejl.
+- **Reglerne ligger ét sted** (`lib/overblik/bruger-sletning.ts`, testet), så
+  siden og handlingen aldrig er uenige: ingen sletning af sin egen konto,
+  ingen sletning af en med historik, og ikke den sidste aktive
+  administrator. Samme sidste-administrator-regel gælder nu også, når en
+  administrator får adgangen fjernet, eller når rollen tages fra
+  vedkommende i formularen — ellers kunne ingen længere give adgang, og det
+  kunne kun rettes direkte i databasen.
+- **Sletter Auth.js' `User`-række**, som via `onDelete: Cascade` tager
+  brugerens sessioner, konti, rolle og hold med sig, og fjerner også
+  login-links, der stadig venter på mailadressen (`verification_tokens`).
+  Afprøvet. Mailadressen kan bagefter bruges til en ny bruger.
+- **Et ekstra trin uden JavaScript:** selve slet-knappen ligger først, når
+  `<details>` "Slet" er åbnet, med en tekst om at det ikke kan fortrydes.
+
+**Hold til slibere:**
+- **Reglen: en sliber med tildelte hold kan kun slibe for dem; en sliber
+  uden hold kan slibe alle** (`sliberHoldBegraensning`/`kanSlibeForHold`,
+  `lib/roller.ts`, testet). Det betyder, at ingen nuværende sliber blev
+  ramt, da funktionen kom (ingen havde tildelte hold), og at ingen kan blive
+  låst ude af maskinen ved at glemme at tildele hold. Det er en forskel fra
+  holdleder, hvor "ingen hold" betyder "intet" — siden viser derfor "Alle
+  hold" ved en sliber og "Ingen hold endnu" ved en holdleder.
+- **Engangsslibning er altid tilladt** for enhver sliber: den er ikke et
+  rigtigt hold, men den delte række til motionister, scannet fra sin egen
+  printede kode.
+- **Håndhævet på serveren i alle sliberens ruter**, ikke kun skjult i
+  skærmbilledet: hold-listen, spillerlisten, opslag, træk, fortryd og noten
+  (`app/api/slib/*`). Afprøvet med en sliber begrænset til U14: U14 og
+  Engangsslibning tilladt, U12 afvist alle steder. Efter at have tilføjet
+  U12 i formularen kunne samme sliber bruge U12.
+- **Afvisningen har en kode (`forkert_hold`)**, fordi et udløbet login også
+  er 403. Telefonen skelner dem: et forkert hold vises som en besked, og en
+  kø-post (fx en offline-scanning), der aldrig kan lykkes, fjernes frem for
+  at blive prøvet for evigt, mens et udløbet login venter på et nyt login.
+  Det sidste er ikke afprøvet i en rigtig offline-situation.
+- **Formularen "Giv eller ret adgang"** har fået afkrydsninger for hold
+  (de hold, der findes, plus et felt til et hold uden spillere endnu) i
+  stedet for fri tekst, og hold gemmes nu også for rollen sliber. Hold og
+  holdleder/sliber deler **én** liste pr. bruger: er en person både
+  holdleder og sliber, gælder de samme hold begge steder.
+- **"Ret" i tabellen** åbner formularen udfyldt med brugerens nuværende
+  indstillinger (mailadressen er skrivebeskyttet — den identificerer
+  brugeren). At gemme en spærret bruger gør vedkommende aktiv igen.
+- **Kendt begrænsning:** en mailadresse kan ikke rettes på en bruger, der
+  allerede har udført noget (kan ikke slettes, og ændres ikke i formularen).
+  Opret i så fald en ny bruger og fjern adgangen på den gamle.

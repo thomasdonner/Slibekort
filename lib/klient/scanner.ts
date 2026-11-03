@@ -67,7 +67,14 @@ export async function hentSpillerTilBekraeftelse(
     if (res.status === 404) {
       return { fejl: "Ukendt eller inaktiv QR-kode." };
     }
-    if (res.status === 401 || res.status === 403) {
+    if (res.status === 403) {
+      // Et hold, kontoen ikke har fået, er noget andet end et udløbet
+      // login — begge er 403, så serveren sender en kode med.
+      const data = await res.json().catch(() => null);
+      if (data?.kode === "forkert_hold") return { fejl: data.fejl };
+      return { fejl: "Login er udløbet. Log ind igen." };
+    }
+    if (res.status === 401) {
       return { fejl: "Login er udløbet. Log ind igen." };
     }
   } catch {
@@ -271,6 +278,7 @@ async function sendKoePost(post: KoePost): Promise<SendSvar> {
         udfoertAfNavn: post.udfoertAfNavn,
       }),
     });
+    if (await erForkertHold(res)) return "mislykkedes_endeligt";
     if (!res.ok) throw new Error("traek fejlede");
     const data = await res.json();
     return await genopslag(post, data);
@@ -286,10 +294,20 @@ async function sendKoePost(post: KoePost): Promise<SendSvar> {
       udfoertAfNavn: post.udfoertAfNavn,
     }),
   });
-  if (res.status === 409) return "mislykkedes_endeligt";
+  if (res.status === 409 || (await erForkertHold(res))) return "mislykkedes_endeligt";
   if (!res.ok) throw new Error("fortryd fejlede");
   const data = await res.json();
   return await genopslag(post, data);
+}
+
+// En kø-post for en spiller på et hold, kontoen ikke (længere) har adgang
+// til, kan aldrig lykkes — den fjernes frem for at blive prøvet for evigt.
+// Et udløbet login er også 403, men skal vente på et nyt login, ikke droppes;
+// derfor kigges der efter serverens kode, ikke kun statuskoden.
+async function erForkertHold(res: Response): Promise<boolean> {
+  if (res.status !== 403) return false;
+  const data = await res.clone().json().catch(() => null);
+  return data?.kode === "forkert_hold";
 }
 
 // /traek og /fortryd svarer kun med saldo, ikke navn/hold/spærretid. Et

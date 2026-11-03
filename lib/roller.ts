@@ -1,4 +1,5 @@
 import type { Rolle } from "@prisma/client";
+import { ENGANGSSLIBNING_HOLD } from "./spillere/engangsslibning";
 
 // Roller der kan se og bruge overblikket og importsiden overhovedet.
 // Selve rækkevidden (hvilke hold) styres af kanSeHold/kanRetteHold.
@@ -42,6 +43,27 @@ export function kanRetteSaldi(adgang: BrugerAdgang): boolean {
 export function kanRetteSaldoForHold(adgang: BrugerAdgang, hold: string): boolean {
   if (kanRetteSaldi(adgang)) return true;
   return adgang.roller.includes("holdleder") && adgang.hold.includes(hold);
+}
+
+/**
+ * Hvilke hold en sliber må slibe for. En sliber uden tildelte hold er ikke
+ * begrænset (alle hold) — det er sådan alle slibere er, indtil en
+ * administrator udtrykkeligt tildeler hold, så ingen bliver låst ude af
+ * maskinen ved en fejl. `null` betyder "alle hold".
+ */
+export function sliberHoldBegraensning(tildelteHold: string[]): string[] | null {
+  return tildelteHold.length === 0 ? null : tildelteHold;
+}
+
+/**
+ * Må sliberen slibe for en spiller på dette hold? Engangsslibning er ikke
+ * et rigtigt hold (den delte række til motionister, scannet fra sin egen
+ * printede kode) og er derfor tilladt for alle slibere uanset hold.
+ */
+export function kanSlibeForHold(tilladte: string[] | null, hold: string): boolean {
+  if (tilladte === null) return true;
+  if (hold === ENGANGSSLIBNING_HOLD) return true;
+  return tilladte.includes(hold);
 }
 
 export function kanAdministrereBrugere(adgang: BrugerAdgang): boolean {

@@ -4,6 +4,8 @@ import {
   kanRetteSaldi,
   kanRetteSaldoForHold,
   kanSeAlleHold,
+  kanSlibeForHold,
+  sliberHoldBegraensning,
   kanSeHold,
   type BrugerAdgang,
 } from "./roller";
@@ -81,5 +83,35 @@ describe("kanAdministrereBrugere", () => {
       true,
     );
     expect(kanAdministrereBrugere({ roller: ["kasserer"], hold: [] })).toBe(false);
+  });
+});
+
+describe("sliberHoldBegraensning", () => {
+  it("er ubegrænset (null) uden tildelte hold", () => {
+    expect(sliberHoldBegraensning([])).toBeNull();
+  });
+
+  it("er de tildelte hold, når der er nogen", () => {
+    expect(sliberHoldBegraensning(["U14", "U16"])).toEqual(["U14", "U16"]);
+  });
+});
+
+describe("kanSlibeForHold", () => {
+  it("lader en ubegrænset sliber slibe alle hold", () => {
+    expect(kanSlibeForHold(null, "U14")).toBe(true);
+    expect(kanSlibeForHold(null, "U99")).toBe(true);
+  });
+
+  it("lader en begrænset sliber slibe de tildelte hold", () => {
+    expect(kanSlibeForHold(["U14", "U16"], "U14")).toBe(true);
+    expect(kanSlibeForHold(["U14", "U16"], "U16")).toBe(true);
+  });
+
+  it("afviser et hold, en begrænset sliber ikke har fået", () => {
+    expect(kanSlibeForHold(["U14"], "U12")).toBe(false);
+  });
+
+  it("lader enhver sliber slibe Engangsslibning, også en begrænset", () => {
+    expect(kanSlibeForHold(["U14"], "Engangsslibning")).toBe(true);
   });
 });

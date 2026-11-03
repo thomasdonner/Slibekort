@@ -1,7 +1,8 @@
 import { NextResponse, after } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { kraevSliber } from "@/lib/kraev-sliber";
+import { afvisForkertHold, kraevSliber } from "@/lib/kraev-sliber";
+import { kanSlibeForHold } from "@/lib/roller";
 import { beregnSaldo } from "@/lib/saldo";
 import { erIndenforSpaerretid } from "@/lib/slibning";
 import { erGyldigtUdfoertAfNavn } from "@/lib/delt-konto";
@@ -81,6 +82,10 @@ export async function POST(request: Request) {
       { fejl: "Ukendt eller inaktiv spiller." },
       { status: 404 },
     );
+  }
+
+  if (!kanSlibeForHold(adgang.hold, spiller.hold)) {
+    return afvisForkertHold();
   }
 
   const sidsteSlibning = await prisma.bevaegelse.findFirst({

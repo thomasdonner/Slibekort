@@ -479,6 +479,46 @@ button.knap-rolig:hover {
   border-top: none;
 }
 
+/* Forklaring i stedet for en knap, fx hvorfor en bruger ikke kan slettes. */
+.tabel-note {
+  align-self: center;
+  max-width: 24ch;
+  font-size: 0.8rem;
+  line-height: 1.3;
+  color: var(--tekst-svag);
+}
+
+/* "Slet" er et <details>: selve slet-knappen ligger først, når det er åbnet. */
+.slet-bruger summary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--fare);
+  border: 1px solid var(--fare);
+  border-radius: var(--radius-lille);
+  cursor: pointer;
+  list-style: none;
+}
+
+.slet-bruger summary::-webkit-details-marker {
+  display: none;
+}
+
+.slet-bruger[open] summary {
+  margin-bottom: 0.5rem;
+}
+
+.slet-bruger p {
+  max-width: 28ch;
+  margin: 0 0 0.5rem;
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
 .tabel-handlinger button {
   padding: 0.4rem 0.85rem;
   min-height: 34px;

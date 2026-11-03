@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { kraevSliber } from "@/lib/kraev-sliber";
+import { afvisForkertHold, kraevSliber } from "@/lib/kraev-sliber";
+import { kanSlibeForHold } from "@/lib/roller";
 import { beregnSaldo } from "@/lib/saldo";
 
 // Spillerne på ét hold, til "Vælg spiller"-fanen på /slib. Returnerer
@@ -17,6 +18,10 @@ export async function GET(request: Request) {
   const hold = new URL(request.url).searchParams.get("hold");
   if (!hold) {
     return NextResponse.json({ fejl: "hold mangler." }, { status: 400 });
+  }
+
+  if (!kanSlibeForHold(adgang.hold, hold)) {
+    return afvisForkertHold();
   }
 
   const spillere = await prisma.spiller.findMany({
