@@ -1927,7 +1927,8 @@ QR-arkets holdvisning.
   Engangsslibning 404.
 - **U14's numre blev sat én gang ud fra Holdsport-eksporten** (et
   engangsscript, ikke en del af importen — importen læser stadig aldrig
-  numre og er uændret). Kun navn og nummer blev brugt af filen. Nummer-
-  kolonnen gik forud for `#nn` i efternavnet, som kun var fald-tilbage.
-  To spillere, hvor de to kilder var uenige (og hver kilde ville give to
-  spillere samme nummer), blev ikke sat og skulle afgøres i hånden.
+  numre og er uændret). Kun navn og nummer blev brugt af filen. Nummeret er
+  tallet bag efternavnet (`#nn`), **ikke** eksportens "Nummer"-kolonne — den
+  var forkert for to spillere (gav dem samme nummer som en anden), mens
+  `#nn` var entydigt for alle 21. Første forsøg brugte kolonnen og
+  måtte rettes; alle 21 numre er nu sat, uden dubletter.
