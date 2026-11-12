@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { kraevOverblikAdgang } from "@/lib/kraev-overblik-adgang";
 import { kanRetteSaldi, kanRetteSaldoForHold, kanSeHold } from "@/lib/roller";
 import { rensSkoejteNote } from "@/lib/skoejte-note";
+import { rensSpillerNummer } from "@/lib/spiller-nummer";
 import { relationerDerSkalFlyttes } from "@/lib/overblik/voksen-fletning";
 import { rensNyKontakt } from "@/lib/overblik/kontakt";
 import { erNyligPaamindet } from "@/lib/mails/regler";
@@ -93,6 +94,34 @@ export async function gemSkoejteNote(formData: FormData) {
   await prisma.spiller.update({
     where: { id: spillerId },
     data: { skoejteNote: renset.vaerdi },
+  });
+
+  revalidatePath(`/overblik/spillere/${spillerId}`);
+}
+
+// Spillerens nummer, trykt på QR-arket. Samme adgang som skøjtenoten:
+// alle, der kan se spilleren (holdleder på egne hold) — det er en
+// praktisk mærkat, ikke noget regnskabsmæssigt.
+export async function gemSpillerNummer(formData: FormData) {
+  const adgang = await kraevOverblikAdgang();
+  if (!adgang.ok) {
+    throw new Error("Ingen adgang til at rette nummeret.");
+  }
+
+  const spillerId = String(formData.get("spillerId"));
+  const spiller = await hentSpillerEllerFejl(spillerId);
+  if (!kanSeHold(adgang.adgang, spiller.hold)) {
+    throw new Error("Ingen adgang til det hold.");
+  }
+
+  const renset = rensSpillerNummer(String(formData.get("nummer") ?? ""));
+  if (!renset.ok) {
+    throw new Error(renset.fejl);
+  }
+
+  await prisma.spiller.update({
+    where: { id: spillerId },
+    data: { nummer: renset.vaerdi },
   });
 
   revalidatePath(`/overblik/spillere/${spillerId}`);

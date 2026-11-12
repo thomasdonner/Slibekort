@@ -106,6 +106,7 @@ type QrSpiller = {
   hold: string;
   qrToken: string;
   skoejteNote: string | null;
+  nummer: string | null;
 };
 
 function QrKort({ spiller }: { spiller: QrSpiller }) {
@@ -119,6 +120,9 @@ function QrKort({ spiller }: { spiller: QrSpiller }) {
           __html: genererQrSvg(betalingsUrl(spiller.qrToken)),
         }}
       />
+      {/* Nummeret står stort over navnet, så det kan ses med et blik på en
+          bunke kort. Arket er et øjebliksbillede, ligesom hulningen. */}
+      {spiller.nummer && <p className="qr-nummer">#{spiller.nummer}</p>}
       <p>{spiller.navn}</p>
       <p>{spiller.hold}</p>
       {/* Hulningen står på selve det udklippede kort, så sliberen kan se

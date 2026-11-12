@@ -553,6 +553,11 @@ Fra Holdsport-eksporten læses kun navn og kontaktoplysninger.
 Aldrig i databasen: fødselsdato, alder, køn, adresse, postnummer, by,
 brugernavn, medlemsnummer, trøjenummer, skabsnummer.
 
+**Én bevidst undtagelse, efter ønske:** et spillernummer kan tastes ind i
+hånden på spillerens side (`Spiller.nummer`) og trykkes på QR-arket — se
+"Beslutninger undervejs — spillernummer" nedenfor. Det læses aldrig fra
+Holdsport-eksporten; listen gælder stadig for import.
+
 Det er børns data. Hvert felt vi ikke gemmer, er et felt vi ikke skal
 beskytte, slette eller forklare.
 
@@ -1874,3 +1879,36 @@ administrator, knappen "Slet" i tabellen på `/overblik/adgang`):
 - **Kendt begrænsning:** en mailadresse kan ikke rettes på en bruger, der
   allerede har udført noget (kan ikke slettes, og ændres ikke i formularen).
   Opret i så fald en ny bruger og fjern adgangen på den gamle.
+
+## Beslutninger undervejs — spillernummer på QR-arket
+
+Ønske: en kasse på hver spiller, hvor spillerens nummer kan tilføjes, og
+nummeret skal stå på QR-arket.
+
+- **Strider mod "Data vi aldrig gemmer"** (trøjenummer stod på listen) — en
+  bevidst undtagelse efter udtrykkeligt ønske, ikke en fejlrettelse. Det
+  er afgrænset til det, der gør undtagelsen lille: nummeret **tastes ind i
+  hånden** og **læses aldrig fra Holdsport-eksporten** (import opdaterer kun
+  `aktiv`/`hold`, så en gentaget import hverken sætter eller sletter det).
+  Det er stadig udelukket for import at gemme trøjenummer fra navnefeltet —
+  `delNavn` kasserer det som før. Nummeret ligger ikke i nogen mail eller
+  rapport, kun på spillerens side og QR-arket.
+- **`Spiller.nummer`: valgfri tekst** (migration `tilfoej_spillernummer`, én
+  nullbar kolonne, ingen eksisterende data berørt). Tekst og ikke tal, så et
+  nummer som "07" bevares. Ingen unik nøgle — to hold kan have samme nummer.
+- **Regler samlet ét sted** (`lib/spiller-nummer.ts`, testet): højst fire
+  tegn, ingen mellemrum, tomt felt gemmes som `null`, og et `#` foran
+  fjernes, fordi kortet selv sætter tegnet. De fire tegn holder feltet til
+  et nummer, så det ikke ender som endnu en note (det er skøjtenotens job).
+- **Rettes af alle, der kan se spilleren** (`gemSpillerNummer` i
+  `app/overblik/actions.ts`, `kanSeHold`): kasserer og administrator på alle
+  hold, holdleder på egne. Samme adgang som skøjtenoten, af samme grund —
+  det er en praktisk mærkat, ikke noget regnskabsmæssigt.
+- **Vises stort over navnet på QR-kortet** (`.qr-nummer`), som `#17`, også i
+  det grupperede og tætpakkede print. Arket er et øjebliksbillede: rettes
+  nummeret, skal arket printes igen. Står desuden i linjen under navnet på
+  spillerens side ("U12 — nr. 17 — aktiv").
+- **Ikke med på sliberens skærm** (`/slib`) — kun overblikket og QR-arket.
+  Det ville kræve et nyt felt i opslaget og i telefonens cache; ikke bedt om.
+- Afprøvet i browseren: gemme `#17` (gemmes som `17`), se det på QR-kortet,
+  rydde feltet igen. Ikke afprøvet: selve print i en rigtig printer.

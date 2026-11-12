@@ -18,6 +18,11 @@ model Spiller {
   // hvad der skal slibes på. Rettes både fra overblikket og fra selve
   // sliberskærmen. Aldrig personoplysninger — kun noget om skøjten.
   skoejteNote String?
+  // Spillerens nummer, tastet ind i hånden i overblikket og trykt på
+  // QR-arket, så kortet er til at genkende. Tekst, ikke tal, så et nummer
+  // som "07" bevares. Importen rører den aldrig (se "Data vi aldrig gemmer"
+  // i CLAUDE.md — nummeret kommer aldrig fra Holdsport).
+  nummer      String?
 
   relationer  Relation[]
   bevaegelser Bevaegelse[]

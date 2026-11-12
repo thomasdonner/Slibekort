@@ -3,12 +3,14 @@ import { prisma } from "@/lib/prisma";
 import { kraevOverblikAdgang } from "@/lib/kraev-overblik-adgang";
 import { kanRetteSaldi, kanRetteSaldoForHold, kanSeHold } from "@/lib/roller";
 import { MAKS_SKOEJTE_NOTE_LAENGE } from "@/lib/skoejte-note";
+import { MAKS_SPILLER_NUMMER_LAENGE } from "@/lib/spiller-nummer";
 import { beregnSaldo } from "@/lib/saldo";
 import { saldoKlasse } from "@/lib/ui/saldo-klasse";
 import { findSoskendeIds } from "@/lib/overblik/soskende";
 import { bestemMailTrin } from "@/lib/mails/regler";
 import {
   gemSkoejteNote,
+  gemSpillerNummer,
   markerStoppet,
   opdaterVoksenKontakt,
   rettSaldo,
@@ -88,7 +90,9 @@ export default async function SpillerSide({
     <main>
       <h1>{spiller.navn}</h1>
       <p>
-        {spiller.hold} — {spiller.aktiv ? "aktiv" : "stoppet"}
+        {spiller.hold}
+        {spiller.nummer && ` — nr. ${spiller.nummer}`} —{" "}
+        {spiller.aktiv ? "aktiv" : "stoppet"}
       </p>
       <p>
         Saldo: <span className={`tal ${saldoKlasse(saldo)}`}>{saldo}</span>
@@ -141,6 +145,28 @@ export default async function SpillerSide({
             <input type="text" name="telefon" />
           </label>
           <button type="submit">Tilføj</button>
+        </form>
+      </section>
+
+      <section>
+        <h2>Spillernummer</h2>
+        <p>
+          Trykkes på spillerens QR-kort. Rettes nummeret, skal QR-arket
+          printes igen.
+        </p>
+        <form action={gemSpillerNummer}>
+          <input type="hidden" name="spillerId" value={spiller.id} />
+          <label>
+            Nummer
+            <input
+              type="text"
+              name="nummer"
+              maxLength={MAKS_SPILLER_NUMMER_LAENGE}
+              defaultValue={spiller.nummer ?? ""}
+              placeholder="Fx 17"
+            />
+          </label>
+          <button type="submit">Gem nummer</button>
         </form>
       </section>
 

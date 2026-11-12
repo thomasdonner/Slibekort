@@ -23,6 +23,12 @@ export const QR_ARK_CSS = `
     white-space: pre-wrap;
     overflow-wrap: anywhere;
   }
+  .qr-nummer {
+    font-weight: 700;
+    font-size: 1.4rem;
+    line-height: 1.1;
+    margin: 0.4rem 0 0;
+  }
   .qr-gruppe h2 {
     margin-top: 1.5rem;
     font-size: 1.1rem;
@@ -66,6 +72,10 @@ export const QR_ARK_CSS = `
     }
     .qr-note {
       font-size: 9pt;
+    }
+    .qr-kort .qr-nummer {
+      font-size: 15pt;
+      margin-top: 1mm;
     }
     /* Grupperne pakkes tæt: hver gruppe fylder kun så mange af de fire
        kolonner, som den har spillere (--kolonner, sat pr. gruppe), så fire
