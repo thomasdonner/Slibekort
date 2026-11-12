@@ -211,6 +211,9 @@ export default async function OverblikSide({
             <IkonHold /> Importér hold
           </Link>
         )}
+        <Link href="/overblik/numre">
+          <IkonHold /> Spillernumre
+        </Link>
         <Link href="/overblik/qr-ark">
           <IkonPrint /> QR-ark til print
         </Link>

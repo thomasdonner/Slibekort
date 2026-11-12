@@ -159,6 +159,13 @@ function QrArk({
           skøjteposerne.
         </p>
         {holdTilValg && (
+          <p>
+            <Link href={`/overblik/numre?hold=${encodeURIComponent(holdTilValg)}`}>
+              Tast spillernumre ind for {holdTilValg}
+            </Link>
+          </p>
+        )}
+        {holdTilValg && (
           <nav className="hold-vaelger">
             <Link
               href={`/overblik/qr-ark?hold=${encodeURIComponent(holdTilValg)}`}

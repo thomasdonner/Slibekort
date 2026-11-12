@@ -1,13 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { after } from "next/server";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { kraevOverblikAdgang } from "@/lib/kraev-overblik-adgang";
 import { kanRetteSaldi, kanRetteSaldoForHold, kanSeHold } from "@/lib/roller";
 import { rensSkoejteNote } from "@/lib/skoejte-note";
-import { rensSpillerNummer } from "@/lib/spiller-nummer";
+import { findNummerRettelser, rensSpillerNummer } from "@/lib/spiller-nummer";
+import { ENGANGSSLIBNING_HOLD } from "@/lib/spillere/engangsslibning";
 import { relationerDerSkalFlyttes } from "@/lib/overblik/voksen-fletning";
 import { rensNyKontakt } from "@/lib/overblik/kontakt";
 import { erNyligPaamindet } from "@/lib/mails/regler";
@@ -125,6 +127,54 @@ export async function gemSpillerNummer(formData: FormData) {
   });
 
   revalidatePath(`/overblik/spillere/${spillerId}`);
+}
+
+// Numrene for et helt hold på én gang (/overblik/numre). Spillerne slås op
+// på serveren ud fra holdet, ikke ud fra hvad formularen påstår — et id, der
+// ikke hører til holdet, kan ikke ramme en anden spiller. Alt eller intet:
+// er blot ét nummer ugyldigt, gemmes ingen.
+export async function gemNumreForHold(formData: FormData) {
+  const adgang = await kraevOverblikAdgang();
+  if (!adgang.ok) {
+    throw new Error("Ingen adgang til at rette numre.");
+  }
+
+  const hold = String(formData.get("hold") ?? "");
+  if (hold === ENGANGSSLIBNING_HOLD || !kanSeHold(adgang.adgang, hold)) {
+    throw new Error("Ingen adgang til det hold.");
+  }
+
+  const spillere = await prisma.spiller.findMany({
+    where: { hold, aktiv: true },
+    select: { id: true, navn: true, nummer: true },
+  });
+
+  // Felterne hedder nummer_<spillerId> (se siden), så hver værdi kan knyttes
+  // til sin spiller uden at regne på rækkefølgen.
+  const indsendt = new Map<string, string>();
+  for (const spiller of spillere) {
+    const vaerdi = formData.get(`nummer_${spiller.id}`);
+    if (vaerdi !== null) indsendt.set(spiller.id, String(vaerdi));
+  }
+
+  const resultat = findNummerRettelser(spillere, indsendt);
+  if (!resultat.ok) {
+    throw new Error(resultat.fejl.join(" "));
+  }
+
+  await prisma.$transaction(
+    resultat.rettelser.map((r) =>
+      prisma.spiller.update({
+        where: { id: r.spillerId },
+        data: { nummer: r.vaerdi },
+      }),
+    ),
+  );
+
+  revalidatePath("/overblik/numre");
+  redirect(
+    `/overblik/numre?hold=${encodeURIComponent(hold)}&gemt=${resultat.rettelser.length}`,
+  );
 }
 
 // Fjerner én bevægelse fra "Bevægelser der kræver et kig" på /overblik,

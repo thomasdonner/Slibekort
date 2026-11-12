@@ -22,3 +22,34 @@ export function rensSpillerNummer(
   // Tomt felt betyder "intet nummer" (null), ikke en tom streng.
   return { ok: true, vaerdi: tekst === "" ? null : tekst };
 }
+
+// Til siden, hvor et helt holds numre tastes ind på én gang. Tager holdets
+// nuværende spillere og de værdier, formularen sendte (spiller-id → tekst),
+// og siger hvilke der skal skrives, og hvilke der er ugyldige. Kun rækker, hvor
+// værdien faktisk er ændret, skrives — en spiller, der ikke er med i
+// formularen, røres ikke. Intet skrives, hvis blot én værdi er ugyldig.
+export type NummerRettelse = { spillerId: string; vaerdi: string | null };
+
+export function findNummerRettelser(
+  spillere: { id: string; navn: string; nummer: string | null }[],
+  indsendt: Map<string, string>,
+):
+  | { ok: true; rettelser: NummerRettelse[] }
+  | { ok: false; fejl: string[] } {
+  const rettelser: NummerRettelse[] = [];
+  const fejl: string[] = [];
+
+  for (const spiller of spillere) {
+    const raa = indsendt.get(spiller.id);
+    if (raa === undefined) continue;
+
+    const renset = rensSpillerNummer(raa);
+    if (!renset.ok) {
+      fejl.push(`${spiller.navn}: ${renset.fejl}`);
+    } else if (renset.vaerdi !== spiller.nummer) {
+      rettelser.push({ spillerId: spiller.id, vaerdi: renset.vaerdi });
+    }
+  }
+
+  return fejl.length > 0 ? { ok: false, fejl } : { ok: true, rettelser };
+}

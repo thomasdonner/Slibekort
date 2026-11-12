@@ -1912,3 +1912,22 @@ nummeret skal stå på QR-arket.
   Det ville kræve et nyt felt i opslaget og i telefonens cache; ikke bedt om.
 - Afprøvet i browseren: gemme `#17` (gemmes som `17`), se det på QR-kortet,
   rydde feltet igen. Ikke afprøvet: selve print i en rigtig printer.
+
+**Numre for et helt hold på én side** (`/overblik/numre`, tilføjet bagefter,
+efter ønske): vælg et hold, tast alle numre i en tabel, og gem dem med
+én knap (`gemNumreForHold`). Linket står i overblikkets navigation og på
+QR-arkets holdvisning.
+- **Alt eller intet:** er blot ét nummer ugyldigt, gemmes ingen. Kun ændrede
+  rækker skrives (`findNummerRettelser`, `lib/spiller-nummer.ts`, testet).
+- **Serveren slår holdets spillere op selv** og læser felterne
+  `nummer_<spillerId>` — et id, der ikke hører til holdet, rammer ingen
+  anden spiller. Samme adgang som resten: `kanSeHold`, så en holdleder kun
+  ser egne hold. Engangsslibning er ikke et hold her og giver 404.
+  Afprøvet med en midlertidig holdleder: eget hold 200, andet hold og
+  Engangsslibning 404.
+- **U14's numre blev sat én gang ud fra Holdsport-eksporten** (et
+  engangsscript, ikke en del af importen — importen læser stadig aldrig
+  numre og er uændret). Kun navn og nummer blev brugt af filen. Nummer-
+  kolonnen gik forud for `#nn` i efternavnet, som kun var fald-tilbage.
+  To spillere, hvor de to kilder var uenige (og hver kilde ville give to
+  spillere samme nummer), blev ikke sat og skulle afgøres i hånden.
