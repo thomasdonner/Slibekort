@@ -221,8 +221,8 @@ export default async function SpillerSide({
           )}
           {!paamindelsesTrin ? (
             <p>
-              Saldoen er {saldo}. Der sendes kun påmindelser ved saldo 1 eller
-              lavere.
+              Saldoen er {saldo}. Der sendes kun påmindelser ved saldo 1, 0 og
+              −2 eller lavere — ikke ved saldo −1.
             </p>
           ) : paamindelsesModtagere.length === 0 ? (
             <p>
