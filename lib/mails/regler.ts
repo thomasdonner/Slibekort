@@ -10,6 +10,15 @@ export function bestemMailTrin(saldo: number): MailTrin | null {
   return null;
 }
 
+// Den manuelle "Send påmindelse nu"-knap må sende ved enhver saldo på 1 eller
+// lavere — også −1, som de automatiske påmindelser springer over (reglen er
+// advarsel ved 1, rykker ved 0 og igen ved −2). Ved −1 er kortet brugt op, så
+// rykkerteksten passer ("brugt op, får stadig slebet skøjter").
+export function bestemManuelMailTrin(saldo: number): MailTrin | null {
+  if (saldo > 1) return null;
+  return saldo === 1 ? "advarsel" : "rykker";
+}
+
 export const PAAMINDELSE_SPAERRETID_TIMER = 48;
 
 /**
@@ -68,12 +77,12 @@ export function udvaelgTilPaamindelse(
 ): UdvalgtPaamindelse[] {
   const udvalgte: UdvalgtPaamindelse[] = [];
   for (const k of kandidater) {
-    const trin = bestemMailTrin(k.saldo);
+    // Den spiller, en bruger selv har trykket for, følger de manuelle regler
+    // (ingen 48 timer, og også saldo −1); søskende de automatiske.
+    const manuel = ignorerSpaerretidFor.includes(k.spillerId);
+    const trin = manuel ? bestemManuelMailTrin(k.saldo) : bestemMailTrin(k.saldo);
     if (!trin) continue;
-    if (
-      !ignorerSpaerretidFor.includes(k.spillerId) &&
-      erIndenforPaamindelsesspaerretid(k.sidstPaamindet, nu)
-    ) {
+    if (!manuel && erIndenforPaamindelsesspaerretid(k.sidstPaamindet, nu)) {
       continue;
     }
     udvalgte.push({ spillerId: k.spillerId, navn: k.navn, trin });

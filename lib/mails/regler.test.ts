@@ -1,10 +1,29 @@
 import { describe, expect, it } from "vitest";
 import {
   bestemMailTrin,
+  bestemManuelMailTrin,
   erIndenforPaamindelsesspaerretid,
   erNyligPaamindet,
   udvaelgTilPaamindelse,
 } from "./regler";
+
+describe("bestemManuelMailTrin", () => {
+  it("sender som den automatiske ved 1, 0 og -2 eller lavere", () => {
+    expect(bestemManuelMailTrin(1)).toBe("advarsel");
+    expect(bestemManuelMailTrin(0)).toBe("rykker");
+    expect(bestemManuelMailTrin(-2)).toBe("rykker");
+    expect(bestemManuelMailTrin(-5)).toBe("rykker");
+  });
+
+  it("sender også ved -1, som den automatiske springer over", () => {
+    expect(bestemManuelMailTrin(-1)).toBe("rykker");
+  });
+
+  it("sender intet ved en sund saldo", () => {
+    expect(bestemManuelMailTrin(2)).toBeNull();
+    expect(bestemManuelMailTrin(10)).toBeNull();
+  });
+});
 
 describe("bestemMailTrin", () => {
   it("advarsel ved saldo 1", () => {
@@ -57,6 +76,28 @@ describe("erIndenforPaamindelsesspaerretid", () => {
 
 describe("udvaelgTilPaamindelse", () => {
   const nu = new Date("2026-01-15T12:00:00.000Z");
+
+  it("springer saldo -1 over automatisk, men tager den med, når der er trykket manuelt", () => {
+    const kandidater = [
+      { spillerId: "a", navn: "Anders", saldo: -1, sidstPaamindet: null },
+    ];
+    expect(udvaelgTilPaamindelse(kandidater, nu)).toEqual([]);
+    expect(udvaelgTilPaamindelse(kandidater, nu, ["a"])).toEqual([
+      { spillerId: "a", navn: "Anders", trin: "rykker" },
+    ]);
+  });
+
+  it("tvinger kun den spiller, der er trykket for — et søskende med -1 følger de automatiske regler", () => {
+    const udvalgte = udvaelgTilPaamindelse(
+      [
+        { spillerId: "a", navn: "Anders", saldo: 0, sidstPaamindet: null },
+        { spillerId: "b", navn: "Andrea", saldo: -1, sidstPaamindet: null },
+      ],
+      nu,
+      ["a"],
+    );
+    expect(udvalgte).toEqual([{ spillerId: "a", navn: "Anders", trin: "rykker" }]);
+  });
 
   it("vælger et barn med lav saldo og ingen tidligere påmindelse", () => {
     const udvalgte = udvaelgTilPaamindelse(

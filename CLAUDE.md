@@ -1724,6 +1724,14 @@ ikke må ændres uden at spørge", efter udtrykkeligt ønske):
   "Ingen mailadresse er registreret"), så et tryk aldrig lydløst ikke gør
   noget. Knappen viser, hvem mailen sendes til, og hvornår den seneste
   påmindelse gik.
+- **Manuelt kan der også sendes ved saldo −1** (`bestemManuelMailTrin` i
+  `lib/mails/regler.ts`, testet), som de automatiske påmindelser med vilje
+  springer over — reglen "advarsel ved 1, rykker ved 0 og igen ved −2" er
+  uændret for dem. Ved −1 bruges rykkerteksten ("slibekortet er brugt op,
+  får stadig slebet skøjter"), og siden siger, at systemet ikke selv sender
+  ved −1, men at knappen gør. Ved saldo 2 og derover sendes der stadig
+  intet, heller ikke manuelt. Afprøvet med en midlertidig spiller på −1 og
+  Resends testadresse: knappen vistes, og der blev sendt en rykker.
 - **Søskende følger den almindelige regel**: kun den spiller, der trykkes
   for, tvinges (`ignorerSpaerretidFor` i `udvaelgTilPaamindelse`, testet), så
   et søskende med en nylig påmindelse ikke også får en ekstra mail.

@@ -7,7 +7,7 @@ import { MAKS_SPILLER_NUMMER_LAENGE } from "@/lib/spiller-nummer";
 import { beregnSaldo } from "@/lib/saldo";
 import { saldoKlasse } from "@/lib/ui/saldo-klasse";
 import { findSoskendeIds } from "@/lib/overblik/soskende";
-import { bestemMailTrin } from "@/lib/mails/regler";
+import { bestemManuelMailTrin } from "@/lib/mails/regler";
 import {
   gemSkoejteNote,
   gemSpillerNummer,
@@ -58,7 +58,7 @@ export default async function SpillerSide({
   // Hvem en manuel påmindelse ville gå til lige nu, og om der overhovedet
   // er noget at sende — vist ved knappen, så den aldrig er et tryk, der
   // lydløst ikke gør noget.
-  const paamindelsesTrin = bestemMailTrin(saldo);
+  const paamindelsesTrin = bestemManuelMailTrin(saldo);
   const paamindelsesModtagere = spiller.relationer
     .filter((r) => r.modtagerMails && r.voksen.email)
     .map((r) => r.voksen.email as string);
@@ -221,8 +221,8 @@ export default async function SpillerSide({
           )}
           {!paamindelsesTrin ? (
             <p>
-              Saldoen er {saldo}. Der sendes kun påmindelser ved saldo 1, 0 og
-              −2 eller lavere — ikke ved saldo −1.
+              Saldoen er {saldo}. Der sendes kun påmindelser ved saldo 1 eller
+              lavere.
             </p>
           ) : paamindelsesModtagere.length === 0 ? (
             <p>
@@ -235,6 +235,8 @@ export default async function SpillerSide({
                 Sendes til: {paamindelsesModtagere.join(", ")}. Knappen sender
                 med det samme og ignorerer 48-timersgrænsen — brug den fx, når
                 en mailadresse er rettet.
+                {saldo === -1 &&
+                  " Ved saldo −1 sender systemet ikke selv en påmindelse — knappen sender den alligevel."}
               </p>
               <form action={sendPaamindelseNu}>
                 <input type="hidden" name="spillerId" value={spiller.id} />

@@ -4,6 +4,7 @@ import { kraevMiljoevariabel } from "@/lib/env";
 import { betalingsUrl } from "@/lib/betaling/url";
 import {
   bestemMailTrin,
+  bestemManuelMailTrin,
   udvaelgTilPaamindelse,
   type PaamindelseKandidat,
 } from "./regler";
@@ -22,9 +23,9 @@ import { sendMail } from "./resend";
 export async function tjekOgSendPaamindelser(
   spillerId: string,
   // `tving` kun fra den manuelle "Send påmindelse nu"-knap: ignorerer
-  // 48-timersgrænsen for netop denne spiller. Saldoen afgør stadig, om der
-  // er noget at sende, og automatiske kald (efter en slibning m.fl.) bruger
-  // aldrig `tving`.
+  // 48-timersgrænsen for netop denne spiller, og tillader også saldo −1
+  // (bestemManuelMailTrin). Saldoen afgør stadig, om der er noget at sende,
+  // og automatiske kald (efter en slibning m.fl.) bruger aldrig `tving`.
   valg: { tving?: boolean } = {},
 ): Promise<void> {
   const spiller = await prisma.spiller.findUnique({
@@ -37,7 +38,7 @@ export async function tjekOgSendPaamindelser(
   if (!spiller || !spiller.aktiv) return;
 
   const saldo = beregnSaldo(spiller.bevaegelser);
-  if (!bestemMailTrin(saldo)) return;
+  if (!(valg.tving ? bestemManuelMailTrin(saldo) : bestemMailTrin(saldo))) return;
 
   const nu = new Date();
   const sidsteMail = await prisma.mail.findFirst({
